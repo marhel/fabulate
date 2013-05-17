@@ -25,7 +25,7 @@
       ((just expected-elements :in-any-order) (flatten-with wt f)))))
 
 (defn parse-choice [dsl] (parsing/parse dsl :choice))
-(defn parse-field [dsl] (parsing/parse dsl :field))
+(defn parse-field [dsl] (parsing/parse dsl))
 
 (facts "single choice"
        (parse-choice "abc") => {:type :choice :weight 1 :item "abc"}
@@ -61,6 +61,7 @@
        (parse-choice "[1 20]") => (contains {:type :range :items (range-contains [1 1] :weight)})
        (parse-choice "[1:100 20:50]") => (contains {:type :range :items (range-contains [1 20])})
        (parse-choice "[1:100 20:50]") => (contains {:type :range :items (range-contains [100 50] :weight)})
+       (parse-choice "[1:100 20:50 50:10]") => (contains {:type :list :wtree (count-is 2)})
 )
 
 (facts "errors"
@@ -95,3 +96,36 @@
        (parse-choice "{123 # abc\n456}") => (contains {:wtree (tree-contains [123 456])})
        (parse-choice "{123 # abc\r456}") => (contains {:wtree (tree-contains [123 456])})
        )
+
+(defn param-contains 
+  ([& expected-params]
+    (fn [results]
+      (every? true? (map #((contains %1) %2) expected-params results)))))
+
+(facts "param-contains"
+       ((param-contains {:a 1} {:b 2}) [{:a 1} {:b 2}])
+       ((param-contains {:a 1} {:b 2}) [{:a 1 :x 1000} {:b 2}])
+       ((param-contains {:a 1 :x 1000} {:b 2}) [{:a 1} {:b 2}]) => falsey
+       ((param-contains {:b 2} {:a 1}) [{:a 1} {:b 2}]) => falsey
+       )
+
+(facts "simplification"
+       (parsing/simplify {:type :whatever}) => (throws IllegalArgumentException #"whatever.*unknown"))
+
+(facts "fields"
+       (parse-field "speed     [0 100]") => (contains {:speed (contains {:type :range})}) 
+       (parse-field "speed     accelerate \"quickly\" [0 100]") 
+       => (contains 
+            {:speed (contains {:type :function 
+                               :name "accelerate"
+                               :params (param-contains {:type :choice 
+                                                        :item "quickly"} 
+                                                       {:type :range})})})
+       (parse-field "speed     accelerate (quickly [0 100])") 
+       => (contains 
+            {:speed (contains {:type :function 
+                               :name "accelerate"
+                               :params (param-contains {:type :function
+                                                        :name "quickly"
+                                                        :params (param-contains {:type :range})})})}))
+

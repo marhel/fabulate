@@ -1,28 +1,10 @@
 (ns fabulate.core-test
   (:use midje.sweet)
-  (:require [fabulate.core :as core]))
+  (:require [fabulate.core :as core]
+            [fabulate.parsing :as parsing]))
 
 (def colors {"Red" 10 "Green" 70 "Blue" 20})
 (def fruits ["Apple" "Orange" "Pear" "Banana"])
-
-(defn x-contains [expected-elements]
-  (fn [wt]
-    (and
-      (if-let [sum (:sum expected-elements)] 
-        (= sum (.sum wt))
-        true)
-      (if-let [item (:item expected-elements)] 
-        (= item (.item wt))
-        true)
-      (if-let [weight (:weight expected-elements)] 
-        (= weight (.weight wt))
-        true)
-      (if-let [check (:less expected-elements)] 
-        (check (.less wt))
-        true)
-      (if-let [check (:more expected-elements)] 
-        (check (.more wt))
-        true))))
 
 (facts
   "weighted-tree"
@@ -32,10 +14,6 @@
   (core/weighted-tree colors) => (contains {:more (contains {:item "Red" :sum 10 :weight 10})})
   (core/weighted-tree fruits) => (contains {:sum 4})
 )
-
-(defn any-of [expected-elements]
-  (fn [actual]
-    ((set expected-elements) actual)))
 
 (facts 
   "tree lookup"
@@ -80,3 +58,12 @@
                            "Green" "Blue" "Green"
                            "Green" "Green" "Green"
                            "Green" "Green" "Blue"])))
+
+(facts "choose"
+       (core/choose (parsing/parse "[0 100]" :choice) 0.5) => (roughly 50)
+       (core/choose (parsing/parse "[0:0 100:0]" :choice) 0.5) => (roughly 50) ; iffy, should throw!
+       (core/choose (parsing/parse "{0 100}" :choice) 0.1) => (some-checker 100 0)
+       (core/choose (parsing/parse "100" :choice) 0.1) => 100
+       (core/choose (parsing/parse "(int [0 100])" :choice) 0.5) => 50
+       (core/choose (parsing/parse "100" :choice) 0.1) => 100
+       )

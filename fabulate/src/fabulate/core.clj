@@ -7,7 +7,7 @@
   ([xs]
     (cond 
       (map? xs) (weighted-tree xs val key)
-      (vector? xs) (weighted-tree xs (constantly 1))))
+      :else (weighted-tree xs (constantly 1))))
   ([xs weight]
     (weighted-tree xs weight identity))
   

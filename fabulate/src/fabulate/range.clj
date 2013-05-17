@@ -18,14 +18,12 @@
   ; The area under the linear function kx + c in interval [0 r] 
   ; is A = (k/2)r^2 + cr
   (let [r (- (:item c2) (:item c1))]
-    (if (zero? r)
-      0
-      (let [w-diff (- (:weight c2) (:weight c1))
-            k (/ w-diff r)
-            c (:weight c1)
-            a (/ k 2)
-            A (+ (* a (java.lang.Math/pow r 2)) (* c r))]
-        [A a c r]))))
+    (let [w-diff (- (:weight c2) (:weight c1))
+          k (if (zero? r) 0 (/ w-diff r))
+          c (:weight c1)
+          a (/ k 2)
+          A (+ (* a (java.lang.Math/pow r 2)) (* c r))]
+      [A a c r])))
 
 (defn range-lookup
   "Works on simplified ranges (exactly two elements)"

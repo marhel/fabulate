@@ -81,7 +81,7 @@
         :field {(keyword (second tree)) (simplify (third tree))}
         :function (let [items (rest (rest tree))
                         name (second tree)
-                        func (or (ns-resolve 'weight.dslfunctions (symbol name)) 
+                        func (or (ns-resolve 'fabulate.dslfunctions (symbol name)) 
                                  (ns-resolve 'clojure.core (symbol name)))]
                     {:type this-key :weight pweight :name name :fn func :params (map simplify items)})
         (throw (IllegalArgumentException. (format "simplification of key %s unknown" this-key)))))))
