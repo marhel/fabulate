@@ -44,7 +44,6 @@
 (defn third [c] (nth c 2))
 
 (declare simplify)
-(defn simplify-1 [tree] (simplify tree 1))
 
 (defn simplify-range 
   "Turns a complicated range (more than two items) into a list 
@@ -55,63 +54,64 @@
                              :weight (area-of pair)
                              :items pair})
         ranges (->>
-                 (map simplify-1 items)
+                 (map simplify items)
                  (partition 2 1)
                  (map to-range))
         wtree (weighted-tree ranges :weight)]
     {:type :list :weight pweight :sum (:sum wtree)
      :wtree wtree}))
 
-(def get-weight second)
-(defmulti simplify (fn [arr pweight] 
-                     (do 
-                       ;(prn (:type arr) r) 
-                       (first arr))))
+(defmulti simplify 
+  (fn 
+    ([items]) ; returns nil, and will end up at the :default handler
+    ([items pweight] 
+      (do 
+        ;(prn (:type arr) r) 
+        (first items)))))
 
-(defmethod simplify :choice [arr pweight]
-  (let [subarr (third arr)
-        weight (get-weight arr)] 
-    (if (vector? subarr)
-      (simplify subarr weight)
-      {:type :choice :weight weight :item subarr})))
+(defmethod simplify :choice [items pweight]
+  (let [[kw weight choice] items]
+    (if (vector? choice)
+      (simplify choice weight)
+      {:type kw :weight weight :item choice})))
 
-(defmethod simplify :list [arr pweight]
-  (let [items (rest arr)
-        wtree (weighted-tree (map simplify-1 items) :weight)]
+(defmethod simplify :list [items pweight]
+  (let [items (rest items)
+        wtree (weighted-tree (map simplify items) :weight)]
     {:type :list :weight pweight :sum (:sum wtree)
      :wtree wtree}))
  
-(defmethod simplify :range [arr pweight]
-  (let [items (rest arr)]
+(defmethod simplify :range [items pweight]
+  (let [items (rest items)]
     (if (>= 2 (count items))
-      {:type :range :weight pweight :items (map simplify-1 items)}
+      {:type :range :weight pweight :items (map simplify items)}
       (simplify-range items pweight))))
 
-(defmethod simplify :field [arr pweight]
-  {(keyword (second arr)) (simplify (third arr) 1)})
+(defmethod simplify :field [items pweight]
+  (let [[kw name choice] items]
+    {(keyword name) (simplify choice pweight)}))
 
-(defmethod simplify :fieldref [arr pweight]
-  {:type :field 
-   :field (keyword (second arr))})
+(defmethod simplify :fieldref [items pweight]
+  (let [[kw name] items]
+    {:type :field, :field (keyword name)}))
 
-(defmethod simplify :fields [arr pweight]
-  (into {} (map simplify-1 (rest arr))))
+(defmethod simplify :fields [items pweight]
+  (into {} (map simplify (rest items))))
  
-(defmethod simplify :function  [arr pweight]
-  (let [items (rest (rest arr))
-        name (second arr)
-        func (or (ns-resolve 'fabulate.dslfunctions (symbol name)) 
+(defmethod simplify :function  [items pweight]
+  (let [[kw name & items] items
+        func (or (ns-resolve 'fabulate.dslfunctions (symbol name))
                  (ns-resolve 'clojure.core (symbol name)))]
-    {:type :function :weight pweight :name name :fn func :params (map simplify-1 items)}))
+    {:type :function :weight pweight :name name :fn func :params (map simplify items)}))
 
-(defmethod simplify :default [arr pweight]
-  (throw (IllegalArgumentException. (format "simplification of key %s unknown" (first arr)))))
+(defmethod simplify :default
+  ([items] (simplify items 1))
+  ([items pweight]
+    (throw (IllegalArgumentException. (format "simplification of key %s unknown" (first items))))))
 
 (defn parse 
   ([start-rule dsl]
     (let [tree (choice-parser dsl :start start-rule)]
       (if (insta/failure? tree)
-        (insta/get-failure tree) 
-        (->> tree
-          (insta/transform transforms)
-          (simplify-1))))))
+        (insta/get-failure tree)
+        (simplify (insta/transform transforms tree) 1)))))

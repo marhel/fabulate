@@ -5,7 +5,7 @@
 (defn -main [& args]
   (let [n 10
         code (format "{%s}" (clojure.string/join " " args))
-        pt (parsing/parse code :choice)
+        pt (parsing/parse :choice code)
         rnds (make-rand-seq (System/currentTimeMillis))] 
       (println "Fabulate 0.0.1α - Martin Hellspong")
       (println code)
