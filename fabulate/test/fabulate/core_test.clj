@@ -60,10 +60,10 @@
                            "Green" "Green" "Blue"])))
 
 (facts "choose"
-       (core/choose (parsing/parse "[0 100]" :choice) 0.5) => (roughly 50)
-       (core/choose (parsing/parse "[0:0 100:0]" :choice) 0.5) => (roughly 50) ; iffy, should throw!
-       (core/choose (parsing/parse "{0 100}" :choice) 0.1) => (some-checker 100 0)
-       (core/choose (parsing/parse "100" :choice) 0.1) => 100
-       (core/choose (parsing/parse "(int [0 100])" :choice) 0.5) => 50
-       (core/choose (parsing/parse "100" :choice) 0.1) => 100
+       (core/choose (parsing/parse :choice "[0 100]") 0.5) => (roughly 50)
+       (core/choose (parsing/parse :choice "[0:0 100:0]") 0.5) => (roughly 50) ; iffy, should throw!
+       (core/choose (parsing/parse :choice "{0 100}") 0.1) => (some-checker 100 0)
+       (core/choose (parsing/parse :choice "100") 0.1) => 100
+       (core/choose (parsing/parse :choice "(int [0 100])") 0.5) => 50
+       (core/choose (parsing/parse :choice "100") 0.1) => 100
        )

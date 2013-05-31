@@ -24,30 +24,27 @@
     (fn [wt]
       ((just expected-elements :in-any-order) (flatten-with wt f)))))
 
-(defn parse-choice [dsl] (parsing/parse dsl :choice))
-(defn parse-field [dsl] (parsing/parse dsl))
-
 (facts "single choice"
-       (parse-choice "abc") => {:type :choice :weight 1 :item "abc"}
-       (parse-choice "123") => {:type :choice :weight 1 :item 123}
-       (parse-choice "123.456") => {:type :choice :weight 1 :item 123.456}
+       (parsing/parse :choice "abc") => {:type :choice :weight 1 :item "abc"}
+       (parsing/parse :choice "123") => {:type :choice :weight 1 :item 123}
+       (parsing/parse :choice "123.456") => {:type :choice :weight 1 :item 123.456}
        )
 
 (facts "list of choices"
-       (parse-choice "{red green blue}") => (contains {:type :list :wtree (count-is 3)})
-       (parse-choice "{red green blue}") => (contains {:type :list :wtree (tree-contains ["red" "green" "blue"])})
-       (parse-choice "{red \"green blue\"}") => (contains {:type :list :wtree (tree-contains ["red" "green blue"])})
-       (parse-choice "{1 2 3}") => (contains {:type :list :wtree (count-is 3)})
-       (parse-choice "{1 2 3}") => (contains {:wtree (tree-contains [1 2 3])})
-       (parse-choice "{1 2 3}") => (contains {:wtree (tree-contains [1 1 1] :weight)})
+       (parsing/parse :choice "{red green blue}") => (contains {:type :list :wtree (count-is 3)})
+       (parsing/parse :choice "{red green blue}") => (contains {:type :list :wtree (tree-contains ["red" "green" "blue"])})
+       (parsing/parse :choice "{red \"green blue\"}") => (contains {:type :list :wtree (tree-contains ["red" "green blue"])})
+       (parsing/parse :choice "{1 2 3}") => (contains {:type :list :wtree (count-is 3)})
+       (parsing/parse :choice "{1 2 3}") => (contains {:wtree (tree-contains [1 2 3])})
+       (parsing/parse :choice "{1 2 3}") => (contains {:wtree (tree-contains [1 1 1] :weight)})
 )
 
 (facts "list of weighted choices"
-       (parse-choice "{red green:70 blue}") => (contains {:wtree (tree-contains [1 1 70] :weight)})
-       (parse-choice "{red:10 green:70 blue:20}") => (contains {:type :list :wtree (tree-contains ["red" "green" "blue"])})
-       (parse-choice "{red:10 green:70 blue:20}") => (contains {:type :list :wtree (tree-contains [10 20 70] :weight)})
-       (parse-choice "{1:20 2:30 3:40}") => (contains {:type :list :wtree (count-is 3)})
-       (parse-choice "{1:20 2:30 3:40}") => (contains {:type :list :wtree (tree-contains [30 20 40] :weight)})
+       (parsing/parse :choice "{red green:70 blue}") => (contains {:wtree (tree-contains [1 1 70] :weight)})
+       (parsing/parse :choice "{red:10 green:70 blue:20}") => (contains {:type :list :wtree (tree-contains ["red" "green" "blue"])})
+       (parsing/parse :choice "{red:10 green:70 blue:20}") => (contains {:type :list :wtree (tree-contains [10 20 70] :weight)})
+       (parsing/parse :choice "{1:20 2:30 3:40}") => (contains {:type :list :wtree (count-is 3)})
+       (parsing/parse :choice "{1:20 2:30 3:40}") => (contains {:type :list :wtree (tree-contains [30 20 40] :weight)})
 )
 (defn range-contains 
   ([expected-elements]
@@ -57,44 +54,44 @@
       ((just expected-elements :in-any-order) (map f r)))))
 
 (facts "a range"
-       (parse-choice "[1 20]") => (contains {:type :range :items (range-contains [1 20])})
-       (parse-choice "[1 20]") => (contains {:type :range :items (range-contains [1 1] :weight)})
-       (parse-choice "[1:100 20:50]") => (contains {:type :range :items (range-contains [1 20])})
-       (parse-choice "[1:100 20:50]") => (contains {:type :range :items (range-contains [100 50] :weight)})
-       (parse-choice "[1:100 20:50 50:10]") => (contains {:type :list :wtree (count-is 2)})
+       (parsing/parse :choice "[1 20]") => (contains {:type :range :items (range-contains [1 20])})
+       (parsing/parse :choice "[1 20]") => (contains {:type :range :items (range-contains [1 1] :weight)})
+       (parsing/parse :choice "[1:100 20:50]") => (contains {:type :range :items (range-contains [1 20])})
+       (parsing/parse :choice "[1:100 20:50]") => (contains {:type :range :items (range-contains [100 50] :weight)})
+       (parsing/parse :choice "[1:100 20:50 50:10]") => (contains {:type :list :wtree (count-is 2)})
 )
 
 (facts "errors"
-       (parse-choice "abc(def") => insta/failure?
-       (parse-choice "abc def") => insta/failure?
-       (parse-choice "1 2") => insta/failure?
-       (parse-choice "") => insta/failure?
+       (parsing/parse :choice "abc(def") => insta/failure?
+       (parsing/parse :choice "abc def") => insta/failure?
+       (parsing/parse :choice "1 2") => insta/failure?
+       (parsing/parse :choice "") => insta/failure?
        )
 
 (facts "non-ASCII character handling"
-       (parse-choice "{abc åÄÖ 123}") => (contains {:type :list :wtree (tree-contains ["abc" "åÄÖ" 123])})
-       (parse-choice "{üb.er lambda_λ}") => (contains {:type :list :wtree (tree-contains ["üb.er" "lambda_λ"])})
+       (parsing/parse :choice "{abc åÄÖ 123}") => (contains {:type :list :wtree (tree-contains ["abc" "åÄÖ" 123])})
+       (parsing/parse :choice "{üb.er lambda_λ}") => (contains {:type :list :wtree (tree-contains ["üb.er" "lambda_λ"])})
        )
 
 (facts "numbers"
-       (parse-choice "123") => (contains {:item 123})
-       (parse-choice "a123") => (contains {:item "a123"})
-       (parse-choice "-123") => (contains {:item -123})
-       (parse-choice "12a3bc") => (throws NumberFormatException #"12a3bc")
-       (parse-choice "{123 \"abc\"}") => (contains {:wtree (tree-contains [123 "abc"])})
-       (parse-choice "a123.456") => (contains {:item "a123.456"})
-       (parse-choice "123.456") => (contains {:item 123.456})
-       (parse-choice "-123.456") => (contains {:item -123.456})
-       (parse-choice "-12a3.456x") => (throws NumberFormatException #"-12a3.456x")
-       (parse-choice "1.23E05") => (contains {:item 123000.0})
+       (parsing/parse :choice "123") => (contains {:item 123})
+       (parsing/parse :choice "a123") => (contains {:item "a123"})
+       (parsing/parse :choice "-123") => (contains {:item -123})
+       (parsing/parse :choice "12a3bc") => (throws NumberFormatException #"12a3bc")
+       (parsing/parse :choice "{123 \"abc\"}") => (contains {:wtree (tree-contains [123 "abc"])})
+       (parsing/parse :choice "a123.456") => (contains {:item "a123.456"})
+       (parsing/parse :choice "123.456") => (contains {:item 123.456})
+       (parsing/parse :choice "-123.456") => (contains {:item -123.456})
+       (parsing/parse :choice "-12a3.456x") => (throws NumberFormatException #"-12a3.456x")
+       (parsing/parse :choice "1.23E05") => (contains {:item 123000.0})
        )
 
 (facts "comments"
-       (parse-choice "123 #abc") => (contains {:item 123})
-       (parse-choice "123 # abc") => (contains {:item 123})
-       (parse-choice "{123 \"# abc\" 456}") => (contains {:wtree (tree-contains [123 "# abc" 456])})
-       (parse-choice "{123 # abc\n456}") => (contains {:wtree (tree-contains [123 456])})
-       (parse-choice "{123 # abc\r456}") => (contains {:wtree (tree-contains [123 456])})
+       (parsing/parse :choice "123 #abc") => (contains {:item 123})
+       (parsing/parse :choice "123 # abc") => (contains {:item 123})
+       (parsing/parse :choice "{123 \"# abc\" 456}") => (contains {:wtree (tree-contains [123 "# abc" 456])})
+       (parsing/parse :choice "{123 # abc\n456}") => (contains {:wtree (tree-contains [123 456])})
+       (parsing/parse :choice "{123 # abc\r456}") => (contains {:wtree (tree-contains [123 456])})
        )
 
 (defn param-contains 
@@ -110,22 +107,44 @@
        )
 
 (facts "simplification"
-       (parsing/simplify {:type :whatever}) => (throws IllegalArgumentException #"whatever.*unknown"))
+       (parsing/simplify {:type :whatever} 2) => (throws IllegalArgumentException #"whatever.*unknown"))
 
 (facts "fields"
-       (parse-field "speed     [0 100]") => (contains {:speed (contains {:type :range})}) 
-       (parse-field "speed     accelerate \"quickly\" [0 100]") 
+       (parsing/parse :field "speed     [0 100]") => (contains {:speed (contains {:type :range})}) 
+       (parsing/parse :field "speed     accelerate \"quickly\" [0 100]") 
        => (contains 
             {:speed (contains {:type :function 
                                :name "accelerate"
                                :params (param-contains {:type :choice 
                                                         :item "quickly"} 
                                                        {:type :range})})})
-       (parse-field "speed     accelerate (quickly [0 100])") 
+       (parsing/parse :field "speed     accelerate (quickly [0 100])") 
        => (contains 
             {:speed (contains {:type :function 
                                :name "accelerate"
                                :params (param-contains {:type :function
                                                         :name "quickly"
                                                         :params (param-contains {:type :range})})})}))
+
+(facts "fields"
+       (parsing/parse :fields 
+"speed     [0 100]
+direction   {N NW W SW S SE E NE}
+") => (contains {:speed (contains {:type :range}) 
+                 :direction (contains {:type :list})}) 
+
+       (parsing/parse :fields
+"speed     [0 100]
+heading   [0 360]
+info      format \"Speed %s km/h heading %s\" $speed $heading
+") => (contains {:speed (contains {:type :range})
+                 :heading (contains {:type :range})
+                 :info (contains {:type :function
+                                  :name "format"
+                                  :params (param-contains {:type :choice}
+                                                          {:type :field
+                                                           :field :speed}
+                                                          {:type :field
+                                                           :field :heading})})})
+)
 

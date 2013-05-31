@@ -5,15 +5,18 @@
   (:require [instaparse.core :as insta]))
 
 (def choice-parser (insta/parser
-    "field = symbol <noise>? ( choice | function ) <noise>?
+    "fields = field+
+     field = symbol <noise>? ( choice | function ) <noise>?
      choice = simple-choice <noise>? ( <':'> <noise>? number )?
+     function = <noise>? symbol (<noise>? choice)*
+     <simple-choice> = string | symbol | number | list | range | paren-function | fieldref
+     string = <noise>? <quote> (!quote !escape #'.' | escaped-char)* <quote>
+     symbol = !number word
+     number = #'[-+]?[0-9][.\\w]*'
      list = <noise>? <'{'> (<noise>? choice)+ <noise>? <'}'>
      range = <noise>? <'['> (<noise>? &number choice)+ <noise>? <']'>
-     symbol = !number word
-     function = <noise>? symbol (<noise>? choice)*
      <paren-function> = <noise>? <'('> function <noise>? <')'>
-     <simple-choice> = string | symbol | number | list | range | paren-function
-     string = <noise>? <quote> (!quote !escape #'.' | escaped-char)* <quote>
+     fieldref = <'$'> symbol 
      <escaped-char> = escape any-or-newlines
      <quote> = '\\\"'
      <escape> = <'\\\\'>
@@ -22,7 +25,7 @@
      comment = #'#.*\\n?\\r?'
      whitespace = #'[\\s\\n\\r]+'
      <word> = #'[\\p{Lu}\\p{Ll}\\d._-]+'
-     number = #'[-+]?[0-9][.\\w]*'"))
+"))
 
 (defn numeric [token] 
   (if (and (= -1 (.indexOf token "."))
@@ -41,6 +44,7 @@
 (defn third [c] (nth c 2))
 
 (declare simplify)
+(defn simplify-1 [tree] (simplify tree 1))
 
 (defn simplify-range 
   "Turns a complicated range (more than two items) into a list 
@@ -51,48 +55,63 @@
                              :weight (area-of pair)
                              :items pair})
         ranges (->>
-                 (map simplify items)
+                 (map simplify-1 items)
                  (partition 2 1)
                  (map to-range))
         wtree (weighted-tree ranges :weight)]
     {:type :list :weight pweight :sum (:sum wtree)
      :wtree wtree}))
 
-(defn simplify 
-  ([tree]
-    (simplify tree 1))
-  ([tree pweight]
-    (let [this-key (first tree)
-          get-weight second]
-      (case this-key
-        :choice (let [subtree (third tree)
-                      weight (get-weight tree)] 
-                  (if (vector? subtree)
-                    (recur subtree weight)
-                    {:type this-key :weight weight :item subtree}))
-        :list (let [items (rest tree)
-                    wtree (weighted-tree (map simplify items) :weight)]
-                {:type this-key :weight pweight :sum (:sum wtree)
-                 :wtree wtree})
-        :range (let [items (rest tree)]
-                 (if (>= 2 (count items))
-                   {:type this-key :weight pweight :items (map simplify items)}
-                   (simplify-range items pweight)))
-        :field {(keyword (second tree)) (simplify (third tree))}
-        :function (let [items (rest (rest tree))
-                        name (second tree)
-                        func (or (ns-resolve 'fabulate.dslfunctions (symbol name)) 
-                                 (ns-resolve 'clojure.core (symbol name)))]
-                    {:type this-key :weight pweight :name name :fn func :params (map simplify items)})
-        (throw (IllegalArgumentException. (format "simplification of key %s unknown" this-key)))))))
+(def get-weight second)
+(defmulti simplify (fn [arr pweight] 
+                     (do 
+                       ;(prn (:type arr) r) 
+                       (first arr))))
+
+(defmethod simplify :choice [arr pweight]
+  (let [subarr (third arr)
+        weight (get-weight arr)] 
+    (if (vector? subarr)
+      (simplify subarr weight)
+      {:type :choice :weight weight :item subarr})))
+
+(defmethod simplify :list [arr pweight]
+  (let [items (rest arr)
+        wtree (weighted-tree (map simplify-1 items) :weight)]
+    {:type :list :weight pweight :sum (:sum wtree)
+     :wtree wtree}))
+ 
+(defmethod simplify :range [arr pweight]
+  (let [items (rest arr)]
+    (if (>= 2 (count items))
+      {:type :range :weight pweight :items (map simplify-1 items)}
+      (simplify-range items pweight))))
+
+(defmethod simplify :field [arr pweight]
+  {(keyword (second arr)) (simplify (third arr) 1)})
+
+(defmethod simplify :fieldref [arr pweight]
+  {:type :field 
+   :field (keyword (second arr))})
+
+(defmethod simplify :fields [arr pweight]
+  (into {} (map simplify-1 (rest arr))))
+ 
+(defmethod simplify :function  [arr pweight]
+  (let [items (rest (rest arr))
+        name (second arr)
+        func (or (ns-resolve 'fabulate.dslfunctions (symbol name)) 
+                 (ns-resolve 'clojure.core (symbol name)))]
+    {:type :function :weight pweight :name name :fn func :params (map simplify-1 items)}))
+
+(defmethod simplify :default [arr pweight]
+  (throw (IllegalArgumentException. (format "simplification of key %s unknown" (first arr)))))
 
 (defn parse 
-  ([dsl]
-    (parse dsl :field)) 
-  ([dsl start-rule]
-  (let [tree (choice-parser dsl :start start-rule)]
-    (if (insta/failure? tree)
-      (insta/get-failure tree) 
-      (->> tree
-        (insta/transform transforms)
-        (simplify))))))
+  ([start-rule dsl]
+    (let [tree (choice-parser dsl :start start-rule)]
+      (if (insta/failure? tree)
+        (insta/get-failure tree) 
+        (->> tree
+          (insta/transform transforms)
+          (simplify-1))))))
