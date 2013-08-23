@@ -33,7 +33,7 @@
 (facts "list of choices"
        (parsing/parse :choice "{red green blue}") => (contains {:type :list :wtree (count-is 3)})
        (parsing/parse :choice "{red green blue}") => (contains {:type :list :wtree (tree-contains ["red" "green" "blue"])})
-       (parsing/parse :choice "{red \"green blue\"}") => (contains {:type :list :wtree (tree-contains ["red" "green blue"])})
+       (parsing/parse :choice "{red \"green\\\" blue\"}") => (contains {:type :list :wtree (tree-contains ["red" "green\" blue"])})
        (parsing/parse :choice "{1 2 3}") => (contains {:type :list :wtree (count-is 3)})
        (parsing/parse :choice "{1 2 3}") => (contains {:wtree (tree-contains [1 2 3])})
        (parsing/parse :choice "{1 2 3}") => (contains {:wtree (tree-contains [1 1 1] :weight)})
@@ -109,7 +109,7 @@
 (facts "simplification"
        (parsing/simplify {:type :whatever} 2) => (throws IllegalArgumentException #"whatever.*unknown"))
 
-(facts "fields"
+(facts "single field"
        (parsing/parse :field "speed     [0 100]") => (contains {:speed (contains {:type :range})}) 
        (parsing/parse :field "speed     accelerate \"quickly\" [0 100]") 
        => (contains 
@@ -126,7 +126,7 @@
                                                         :name "quickly"
                                                         :params (param-contains {:type :range})})})}))
 
-(facts "fields"
+(facts "multiple fields"
        (parsing/parse :fields 
 "speed     [0 100]
 direction   {N NW W SW S SE E NE}

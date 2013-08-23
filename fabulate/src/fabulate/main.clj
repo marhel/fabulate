@@ -10,5 +10,5 @@
       (println "Fabulate 0.0.1α - Martin Hellspong")
       (println code)
       (println pt)
-      (doseq [i (take n (rnds 1))]
-        (println (choose pt i)))))
+      (dotimes [i n]
+        (println (choose pt (first (rnds 1)))))))

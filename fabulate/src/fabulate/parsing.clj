@@ -41,8 +41,6 @@
 
 (def transforms {:number numeric :symbol identity :string str :choice unify-choice})
 
-(defn third [c] (nth c 2))
-
 (declare simplify)
 
 (defn simplify-range 
