@@ -4,7 +4,11 @@ Fabulate generates data from your specifications. It could be used for filling a
 
 ## Usage
 
-lein run
+	lein run
+	lein help
+	lein kibit				run static code analysis (install kibit first)
+	lein midje				run tests (once)
+	lein midje :autotest	run tests (on file change)
 
 ## License
 
