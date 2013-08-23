@@ -77,8 +77,32 @@
 (defmethod choose :range [tree r]
   (range-lookup tree r))
 
+; A function will need to consume as many random numbers as it has parameters, 
+; as it will call choose on each argument
 (defmethod choose :function [tree r]  
   (let [params (:params tree)
         vals (map #(choose % r) params)] 
     ; (println "calling" (:fn tree) vals)
     (apply (:fn tree) vals)))
+
+
+(defn flatten-tree [wt] (if (empty? wt) nil (conj 
+                                              (concat (flatten-tree (:less wt)) 
+                                                      (flatten-tree (:more wt)))
+                                              (:item wt))))
+(defn dependencies [l]
+		(->> l
+    (map depends-on)
+    (apply clojure.set/union))) 
+
+(defmulti depends-on (fn [field] (:type field)))
+(defmethod depends-on :choice [field] #{})
+(defmethod depends-on :range [field] #{})
+(defmethod depends-on :field [field] #{(:field field)})
+(defmethod depends-on :list [field] (dependencies (flatten-tree (:wtree field))))
+(defmethod depends-on :function [field] (dependencies (:params field)))
+
+(defn generate 
+  [fields f]
+  (depends-on (f fields)))
+;(into  {} (map (fn [kw] {kw (depends-on (kw fs))}) (keys fs)))
