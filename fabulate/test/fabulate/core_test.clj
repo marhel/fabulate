@@ -71,13 +71,15 @@
 (facts 
   "generate row" 
   (let [dsl "speed     [0 100]
+info      format \"Speed %.2f km/h heading %.2f\" $speed $heading
 heading   [0 360]
-info      format \"Speed %.2f km/h heading %.2f\" $speed $heading"
+"
         fields (parsing/parse :fields dsl)]
+    (core/fields-by-dep fields) => (just [:heading :speed :info])
     (binding [core/*rnd*  (core/make-rand-seq well-known-seed)]
       (core/generate fields)
-    => {:speed 41.321922662961654, :heading 356.5491743267341, :info "Speed 41,32 km/h heading 356,55"}
+    => {:speed 99.0414373129817, :heading 148.75892158666196, :info "Speed 99,04 km/h heading 148,76"}
 
      (core/generate fields)
-     => {:speed 70.56636259919212, :heading 26.437831286402286, :info "Speed 70,57 km/h heading 26,44"}
+     => {:speed 7.343842024000635, :heading 254.0389053570916, :info "Speed 7,34 km/h heading 254,04"}
 )))

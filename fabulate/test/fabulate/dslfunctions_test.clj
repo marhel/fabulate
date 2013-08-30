@@ -14,7 +14,10 @@
 (facts "main"
        (let [code "speed     [0 100]
 heading   [0 360]
-info      format \"Speed %.2f km/h heading %.2f\" $speed $heading"
+info      format \"Speed %.2f km/h heading\" $speed $heading
+"
              file "fabtest.fab"
              _ (spit file code)] 
-         (main/-main file) => anything))
+         (main/-main file) => anything
+         (main/-main file "2") => anything 
+       ))

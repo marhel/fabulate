@@ -1,5 +1,6 @@
 (ns fabulate.core
-  (:use fabulate.range))
+  (:use fabulate.range)
+  (:require [fabulate.kahn :as kahn]))
 
 (set! *warn-on-reflection* true)
 
@@ -92,7 +93,6 @@
   (let [f (:field tree)]
     (f *row*)))
 
-
 (def ^:dynamic *rnd* (make-rand-seq (System/currentTimeMillis)))
 
 (defn resolve-field
@@ -100,7 +100,32 @@
   (let [field (f fields)]
     {f (choose field (first (*rnd* 1)))}))
 
+(defn flatten-tree [wt] (if (empty? wt) nil (conj 
+                                              (concat (flatten-tree (:less wt)) 
+                                                      (flatten-tree (:more wt)))
+                                              (:item wt))))
+(defmulti depends-on (fn [field] (:type field)))
+
+(defn dependencies [l]
+		(->> l
+    (map depends-on)
+    (apply clojure.set/union))) 
+
+(defmethod depends-on :choice [field] #{})
+(defmethod depends-on :range [field] #{})
+(defmethod depends-on :field [field] #{(:field field)})
+(defmethod depends-on :list [field] (dependencies (flatten-tree (:wtree field))))
+(defmethod depends-on :function [field] (dependencies (:params field)))
+
+(defn fields-by-dep [fields]
+	  (->> (keys fields)
+     (map (fn [kw] {kw (depends-on (kw fields))})) 
+     (into  {})
+     (kahn/kahn-sort)
+     (reverse)))
+
 (defn generate
-  [fields]
-  (let [fs (keys fields)] ; more sofisticated dependency ordering needed?
-    (reduce (fn [row f] (into row (binding [*row* row] (resolve-field f fields)))) {} fs)))
+  ([fields]
+    (generate fields (fields-by-dep fields)))
+  ([fields fields-in-dep-order]
+    (reduce (fn [row f] (into row (binding [*row* row] (resolve-field f fields)))) {} fields-in-dep-order)))
