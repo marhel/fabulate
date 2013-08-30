@@ -4,8 +4,8 @@
   (:require [fabulate.dslfunctions :as dsl])
   (:require [instaparse.core :as insta]))
 
-(def choice-parser (insta/parser
-    "fields = field+
+(def dsl-parser (insta/parser
+    "fields = (field <newline>)+
      field = symbol <noise>? ( choice | function ) <noise>?
      choice = simple-choice <noise>? ( <':'> <noise>? number )?
      function = <noise>? symbol (<noise>? choice)*
@@ -20,10 +20,11 @@
      <escaped-char> = escape any-or-newlines
      <quote> = '\\\"'
      <escape> = <'\\\\'>
+     <newline> = #'[\\n\\r]+'
      <any-or-newlines> = #'(.|\\n\\r?)'
      noise = (<comment> | <whitespace>)+
      comment = #'#.*\\n?\\r?'
-     whitespace = #'[\\s\\n\\r]+'
+     whitespace = #'[ \\t]+'
      <word> = #'[\\p{Lu}\\p{Ll}\\d._-]+'
 "))
 
@@ -109,7 +110,7 @@
 
 (defn parse 
   ([start-rule dsl]
-    (let [tree (choice-parser dsl :start start-rule)]
+    (let [tree (dsl-parser dsl :start start-rule)]
       (if (insta/failure? tree)
         (insta/get-failure tree)
         (simplify (insta/transform transforms tree) 1)))))
