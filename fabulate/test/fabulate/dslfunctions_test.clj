@@ -12,4 +12,9 @@
        (dsl/age 0) => (date-like "yyyy"))
 
 (facts "main"
-       (main/-main "(age [20 30])") => anything)
+       (let [code "speed     [0 100]
+heading   [0 360]
+info      format \"Speed %.2f km/h heading %.2f\" $speed $heading"
+             file "fabtest.fab"
+             _ (spit file code)] 
+         (main/-main file) => anything))

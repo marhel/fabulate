@@ -3,12 +3,11 @@
   (:require [fabulate.parsing :as parsing]))
 
 (defn -main [& args]
-  (let [n 10
-        code (format "{%s}" (clojure.string/join " " args))
-        pt (parsing/parse :choice code)
-        rnds (make-rand-seq (System/currentTimeMillis))] 
-      (println "Fabulate 0.0.1α - Martin Hellspong")
-      (println code)
-      (println pt)
+  (let [file (first args)
+        n (read-string (or (second args) "10"))
+        code (slurp file)
+        fields (parsing/parse :fields code)]
+      (println "Fabulate 0.0.2α - Martin Hellspong")
+      (println "-- Code from" file "--\n\n" code "\n\n-- Fields --\n" fields "\n\n--" n "Results --")
       (dotimes [i n]
-        (println (choose pt (first (rnds 1)))))))
+        (prn (generate fields)))))

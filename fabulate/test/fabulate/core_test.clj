@@ -67,3 +67,17 @@
        (core/choose (parsing/parse :choice "(int [0 100])") 0.5) => 50
        (core/choose (parsing/parse :choice "100") 0.1) => 100
        )
+
+(facts 
+  "generate row" 
+  (let [dsl "speed     [0 100]
+heading   [0 360]
+info      format \"Speed %.2f km/h heading %.2f\" $speed $heading"
+        fields (parsing/parse :fields dsl)]
+    (binding [core/*rnd*  (core/make-rand-seq well-known-seed)]
+      (core/generate fields)
+    => {:speed 41.321922662961654, :heading 356.5491743267341, :info "Speed 41,32 km/h heading 356,55"}
+
+     (core/generate fields)
+     => {:speed 70.56636259919212, :heading 26.437831286402286, :info "Speed 70,57 km/h heading 26,44"}
+)))

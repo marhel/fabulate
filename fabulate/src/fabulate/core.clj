@@ -85,24 +85,22 @@
     ; (println "calling" (:fn tree) vals)
     (apply (:fn tree) vals)))
 
+(def ^:dynamic *row* {})
 
-(defn flatten-tree [wt] (if (empty? wt) nil (conj 
-                                              (concat (flatten-tree (:less wt)) 
-                                                      (flatten-tree (:more wt)))
-                                              (:item wt))))
-(defn dependencies [l]
-		(->> l
-    (map depends-on)
-    (apply clojure.set/union))) 
+; cross-reference to the value of another field in the same row
+(defmethod choose :field [tree r]  
+  (let [f (:field tree)]
+    (f *row*)))
 
-(defmulti depends-on (fn [field] (:type field)))
-(defmethod depends-on :choice [field] #{})
-(defmethod depends-on :range [field] #{})
-(defmethod depends-on :field [field] #{(:field field)})
-(defmethod depends-on :list [field] (dependencies (flatten-tree (:wtree field))))
-(defmethod depends-on :function [field] (dependencies (:params field)))
 
-(defn generate 
-  [fields f]
-  (depends-on (f fields)))
-;(into  {} (map (fn [kw] {kw (depends-on (kw fs))}) (keys fs)))
+(def ^:dynamic *rnd* (make-rand-seq (System/currentTimeMillis)))
+
+(defn resolve-field
+  [f fields]
+  (let [field (f fields)]
+    {f (choose field (first (*rnd* 1)))}))
+
+(defn generate
+  [fields]
+  (let [fs (keys fields)] ; more sofisticated dependency ordering needed?
+    (reduce (fn [row f] (into row (binding [*row* row] (resolve-field f fields)))) {} fs)))
