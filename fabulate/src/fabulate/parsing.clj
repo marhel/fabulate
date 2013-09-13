@@ -5,8 +5,8 @@
   (:require [instaparse.core :as insta]))
 
 (def dsl-parser (insta/parser
-    "fields = (field <newline>)+
-     field = symbol <noise>? ( choice | function ) <noise>?
+    "fields = (<newline> <noise>?)* field ((<newline> <noise>?)+ field)* <newline>?
+     field = <noise>? symbol <noise>? ( choice | function ) <noise>? 
      choice = simple-choice <noise>? ( <':'> <noise>? number )?
      function = <noise>? symbol (<noise>? choice)*
      <simple-choice> = string | symbol | number | list | range | paren-function | fieldref
@@ -16,14 +16,14 @@
      list = <noise>? <'{'> (<noise>? choice)+ <noise>? <'}'>
      range = <noise>? <'['> (<noise>? &number choice)+ <noise>? <']'>
      <paren-function> = <noise>? <'('> function <noise>? <')'>
-     fieldref = <'$'> symbol 
-     <escaped-char> = escape any-or-newlines
+     fieldref = <'$'> symbol
+     <escaped-char> = escape any-char
      <quote> = '\\\"'
      <escape> = <'\\\\'>
      <newline> = #'[\\n\\r]+'
-     <any-or-newlines> = #'(.|\\n\\r?)'
+     <any-char> = #'(.)'
      noise = (<comment> | <whitespace>)+
-     comment = #'#.*\\n?\\r?'
+     comment = #'#.*'
      whitespace = #'[ \\t]+'
      <word> = #'[\\p{Lu}\\p{Ll}\\d._-]+'
 "))

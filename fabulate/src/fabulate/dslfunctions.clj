@@ -33,4 +33,3 @@
     (let [m (magnitude f)
           s (inc (min 3 m))]
       (round-sig f s))))
-

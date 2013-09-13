@@ -90,8 +90,7 @@
        (parsing/parse :choice "123 #abc") => (contains {:item 123})
        (parsing/parse :choice "123 # abc") => (contains {:item 123})
        (parsing/parse :choice "{123 \"# abc\" 456}") => (contains {:wtree (tree-contains [123 "# abc" 456])})
-       (parsing/parse :choice "{123 # abc\n456}") => (contains {:wtree (tree-contains [123 456])})
-       (parsing/parse :choice "{123 # abc\r456}") => (contains {:wtree (tree-contains [123 456])})
+       (parsing/parse :choice "{123 456} # abc") => (contains {:wtree (tree-contains [123 456])})
        )
 
 (defn param-contains 
@@ -127,17 +126,23 @@
                                                         :params (param-contains {:type :range})})})}))
 
 (facts "multiple fields"
+       (parsing/parse :fields "speed [0 100]") => (contains {:speed (contains {:type :range})}) 
        (parsing/parse :fields 
 "speed     [0 100]
 direction   {N NW W SW S SE E NE}
 ") => (contains {:speed (contains {:type :range}) 
                  :direction (contains {:type :list})}) 
+       (parsing/parse :fields 
+"speed     [0 100] # some comment
+direction   {N NW W SW S SE E NE}") => (contains {:speed (contains {:type :range}) 
+                 :direction (contains {:type :list})}) 
 
-       (parsing/parse :fields
-"speed     [0 100]
-heading   [0 360]
-info      format \"Speed %s km/h heading %s\" $speed $heading
-") => (contains {:speed (contains {:type :range})
+       (parsing/parse :fields"
+info      format \"Speed %s km/h heading %s\" $speed $heading # with comment
+
+   # these are just supporting fields, used for the calculation of the info-field
+   speed     [0 100] # with comment
+   heading   [0 360]") => (contains {:speed (contains {:type :range})
                  :heading (contains {:type :range})
                  :info (contains {:type :function
                                   :name "format"
