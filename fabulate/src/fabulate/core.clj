@@ -93,6 +93,12 @@
   (let [f (:field tree)]
     (f *row*)))
 
+(defmethod choose :regex [tree r]  
+  (let [generator (:generator tree)
+        result (generator)
+        extractor (if (vector? result) first identity)]
+    (extractor result)))
+
 (def ^:dynamic *rnd* (make-rand-seq (System/currentTimeMillis)))
 
 (defn resolve-field
@@ -113,6 +119,7 @@
 
 (defmethod depends-on :choice [field] #{})
 (defmethod depends-on :range [field] #{})
+(defmethod depends-on :regex [field] #{})
 (defmethod depends-on :field [field] #{(:field field)})
 (defmethod depends-on :list [field] (dependencies (flatten-tree (:wtree field))))
 (defmethod depends-on :function [field] (dependencies (:params field)))

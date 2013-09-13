@@ -2,15 +2,17 @@
   (:use fabulate.core)
   (:use fabulate.range)
   (:require [fabulate.dslfunctions :as dsl])
-  (:require [instaparse.core :as insta]))
+  (:require [instaparse.core :as insta])
+  (:require [re-rand.parser.rules :as rr]))
 
 (def dsl-parser (insta/parser
     "fields = (<newline> <noise>?)* field ((<newline> <noise>?)+ field)* <newline>?
      field = <noise>? symbol <noise>? ( choice | function ) <noise>? 
      choice = simple-choice <noise>? ( <':'> <noise>? number )?
      function = <noise>? symbol (<noise>? choice)*
-     <simple-choice> = string | symbol | number | list | range | paren-function | fieldref
+     <simple-choice> = string | symbol | number | regex | list | range | paren-function | fieldref
      string = <noise>? <quote> (!quote !escape #'.' | escaped-char)* <quote>
+     regex = <noise>? <'/'> (!'/' #'.' | <'\\\\'> '/' )* <'/'>
      symbol = !number word
      number = #'[-+]?[0-9][.\\w]*'
      list = <noise>? <'{'> (<noise>? choice)+ <noise>? <'}'>
@@ -21,7 +23,7 @@
      <quote> = '\\\"'
      <escape> = <'\\\\'>
      <newline> = #'[\\n\\r]+'
-     <any-char> = #'(.)'
+     <any-char> = #'.'
      noise = (<comment> | <whitespace>)+
      comment = #'#.*'
      whitespace = #'[ \\t]+'
@@ -39,8 +41,8 @@
     (unify-choice c 1)) 
   ([c w]
     (vector :choice w c)))
-
-(def transforms {:number numeric :symbol identity :string str :choice unify-choice})
+(defn make-rx [& v] [:regex (re-pattern (apply str v))])
+(def transforms {:number numeric :symbol identity :string str :regex make-rx :choice unify-choice})
 
 (declare simplify)
 
@@ -92,7 +94,7 @@
 
 (defmethod simplify :fieldref [items pweight]
   (let [[kw name] items]
-    {:type :field, :field (keyword name)}))
+    {:type :field :weight pweight :field (keyword name)}))
 
 (defmethod simplify :fields [items pweight]
   (into {} (map simplify (rest items))))
@@ -102,6 +104,10 @@
         func (or (ns-resolve 'fabulate.dslfunctions (symbol name))
                  (ns-resolve 'clojure.core (symbol name)))]
     {:type :function :weight pweight :name name :fn func :params (map simplify items)}))
+
+(defmethod simplify :regex [items pweight]
+  (let [[kw pattern] items]
+    {:type :regex :weight pweight :generator (first (rr/pattern (str pattern))) :pattern pattern}))
 
 (defmethod simplify :default
   ([items] (simplify items 1))

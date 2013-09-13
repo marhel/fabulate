@@ -58,6 +58,9 @@
                            "Green" "Blue" "Green"
                            "Green" "Green" "Green"
                            "Green" "Green" "Blue"])))
+(defn matches
+  [pattern]
+    (fn [actual] (not (nil? (re-matches pattern actual)))))
 
 (facts "choose"
        (core/choose (parsing/parse :choice "[0 100]") 0.5) => (roughly 50)
@@ -66,6 +69,8 @@
        (core/choose (parsing/parse :choice "100") 0.1) => 100
        (core/choose (parsing/parse :choice "(int [0 100])") 0.5) => 50
        (core/choose (parsing/parse :choice "100") 0.1) => 100
+       (core/choose (parsing/parse :choice "/<[A-Z]>/") 0.1) => (matches #"<[A-Z]>")
+       (core/choose (parsing/parse :choice "/([A-Z])/") 0.1) => (matches #"[A-Z]")
        )
 
 (facts 

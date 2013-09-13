@@ -26,6 +26,7 @@
 
 (facts "single choice"
        (parsing/parse :choice "abc") => {:type :choice :weight 1 :item "abc"}
+       (parsing/parse :choice "\"abc def\"") => {:type :choice :weight 1 :item "abc def"}
        (parsing/parse :choice "123") => {:type :choice :weight 1 :item 123}
        (parsing/parse :choice "123.456") => {:type :choice :weight 1 :item 123.456}
        )
@@ -72,6 +73,9 @@
        (parsing/parse :choice "{abc åÄÖ 123}") => (contains {:type :list :wtree (tree-contains ["abc" "åÄÖ" 123])})
        (parsing/parse :choice "{üb.er lambda_λ}") => (contains {:type :list :wtree (tree-contains ["üb.er" "lambda_λ"])})
        )
+
+(facts "regex"
+       (parsing/parse :choice "/\\w\\/([a-f]{4}|\\d{4})/") => (contains {:type :regex :pattern #"\w/([a-f]{4}|\d{4})"}))
 
 (facts "numbers"
        (parsing/parse :choice "123") => (contains {:item 123})
