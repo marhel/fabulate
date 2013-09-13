@@ -1,4 +1,6 @@
-id			int [10000 99999]
-category	{Home Office Garden Construction Tools}
-price		[10 1000]
-info		format "Item %s is a nice %s product for only €%.2f" $id $category $price
+id			int [10000 99999] # a range of integers
+category	{Home Office Garden Construction Tools}	# a few possible choices
+price		price [10 1000]		# a range of doubles, rounded as price
+
+# a column may include the value of other columns
+blurb		format "Item %s is a nice %s product for only €%.2f" $id $category $price
