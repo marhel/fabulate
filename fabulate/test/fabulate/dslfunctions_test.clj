@@ -12,6 +12,7 @@
        (dsl/age 0) => (date-like "yyyy"))
 
 (facts "round-sig"
+       (dsl/round-sig 0 4) => 0
        (dsl/round-sig 1.23456789e15 4) => 1.235e15
        (dsl/round-sig 1.23456789e14 4) => 1.235e14
        (dsl/round-sig 1.23456789e13 4) => 1.235e13
@@ -40,6 +41,8 @@
        )
 
 (facts "price"
+       (dsl/price 0) => 0
+       (dsl/price -10) => -10.0
        (dsl/price 1.23456789e13) => 1.235e13
        (dsl/price 1.23456789e07) => 1.235e7
        (dsl/price 1.23456789e05) => 1.235e5

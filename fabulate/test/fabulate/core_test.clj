@@ -1,7 +1,8 @@
 (ns fabulate.core-test
   (:use midje.sweet)
   (:require [fabulate.core :as core]
-            [fabulate.parsing :as parsing]))
+            [fabulate.parsing :as parsing]
+            [fabulate.kahn :as kahn]))
 
 (def colors {"Red" 10 "Green" 70 "Blue" 20})
 (def fruits ["Apple" "Orange" "Pear" "Banana"])
@@ -62,6 +63,10 @@
   [pattern]
     (fn [actual] (not (nil? (re-matches pattern actual)))))
 
+(facts "depends-on"
+       (core/depends-on (:zero (parsing/parse :field "zero {$one two $three}"))) => (just #{:one :three})       
+       (core/depends-on (:zero (parsing/parse :field "zero /123/"))) => (just #{}))
+
 (facts "choose"
        (core/choose (parsing/parse :choice "[0 100]") 0.5) => (roughly 50)
        (core/choose (parsing/parse :choice "[0:0 100:0]") 0.5) => (roughly 50) ; iffy, should throw!
@@ -72,6 +77,26 @@
        (core/choose (parsing/parse :choice "/<[A-Z]>/") 0.1) => (matches #"<[A-Z]>")
        (core/choose (parsing/parse :choice "/([A-Z])/") 0.1) => (matches #"[A-Z]")
        )
+
+(facts "kahn"
+  (def acyclic-g
+    {7 #{11 8}
+     5 #{11}
+     3 #{8 10}
+     11 #{2 9}
+     8 #{9}})
+ 
+  (def cyclic-g
+    {7 #{11 8}
+     5 #{11}
+     3 #{8 10}
+     11 #{2 9}
+     8 #{9}
+     2 #{11}}) ;oops, a cycle!
+ 
+  (kahn/kahn-sort acyclic-g) => (just [3 5 7 8 10 11 2 9])
+  (kahn/kahn-sort cyclic-g) => nil
+  )
 
 (facts 
   "generate row" 
