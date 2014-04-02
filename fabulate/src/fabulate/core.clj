@@ -106,11 +106,13 @@
   (let [field (f fields)]
     {f (choose field (first (*rnd* 1)))}))
 
-(defn flatten-tree [wt] (if (empty? wt) nil (conj 
-                                              (concat (flatten-tree (:less wt)) 
-                                                      (flatten-tree (:more wt)))
-                                              (:item wt))))
-(defmulti depends-on (fn [field] (:type field)))
+(defn flatten-tree [wt] (when (seq wt) 
+                          (conj 
+                            (concat (flatten-tree (:less wt)) 
+                                    (flatten-tree (:more wt)))
+                            (:item wt))))
+
+(defmulti depends-on :type)
 
 (defn dependencies [l]
 		(->> l

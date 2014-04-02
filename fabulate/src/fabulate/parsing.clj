@@ -41,7 +41,7 @@
     (unify-choice c 1)) 
   ([c w]
     (vector :choice w c)))
-(defn make-rx [& v] [:regex (re-pattern (apply str v))])
+(defn make-rx [& v] [:regex (re-pattern (clojure.string/join v))])
 (def transforms {:number numeric :symbol identity :string str :regex make-rx :choice unify-choice})
 
 (declare simplify)
