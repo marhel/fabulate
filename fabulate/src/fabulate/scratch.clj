@@ -26,3 +26,27 @@ heading   [0 360]
 ; (choose lookup in *ctx*)
 
 (reduce (fn [row f] (into row (binding [*row* row] (resolve fs f)))) {} (keys fs)))
+
+
+(require '[clojure.data.csv :as csv])
+(require '[clojure.java.io :as io])
+(defn write-to [file-name fs fields records]
+  (let [headers (map name fields)
+        to-values (apply clojure.core/juxt fields)
+        stream-of (fn further [fs]
+                    (cons (to-values (generate fs)) (lazy-seq (further fs))))]
+    (with-open [out-file (io/writer file-name)]
+      (csv/write-csv out-file
+                     (lazy-cat [headers]
+                               (take records (stream-of fs)))))))
+
+(def fields [:Type :id :Name :price])
+(def fs (fabulate.parsing/parse :fields 
+                                "Name    /\\w{3,9}/
+   id /[A-F0-9]{8}(-[A-F0-9]{4}){3}-[A-F0-9]{12}/
+   Type {one \"the second\" three}
+   price price [0 100]"))
+
+(write-to "out-file.csv" fs fields 100)
+(slurp "out-file.csv")
+
