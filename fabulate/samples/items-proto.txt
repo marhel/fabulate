@@ -1,0 +1,128 @@
+prototype item {
+	id			/[A-Z]{2}\d{3}-\d{2}[a-z]/ 	# a value matching the specified regex
+	category	{Home Office Garden Construction Tools}	# a few possible choices
+	price		price [10 1000]		# a range of doubles, rounded as price
+
+	# a column may include the value of other columns
+	blurb		format "Item %s is a nice %s product for only €%.2f" $id $category $price
+}
+
+prototype customer {
+	id		int
+	name	/[A-Z]+/
+	visitingAddress	@address
+	billingAddress	{$visitingAddress:10 new($visitingAddress street)}
+	shippingAddress	{$visitingAddress:10 new($visitingAddress street)}
+}
+
+prototype address {
+	country		string
+	street		string
+	city		string
+}
+
+prototype contact {
+	firstname	string
+	lastname	string
+	birthday	age [20 50:10 70]
+}
+
+prototype order {
+	id    		guid
+	date		age step [1 4]
+	member		<gold silver standard>
+	orderline 	{
+		lineno		sequence $parent.id
+		item      	pick @item
+		itemid 		$item.id
+		qty			int [1 100]
+		cost 		$item.price
+	}
+}
+
+# ----------------------
+order {
+	f some @ {cardinality [10 20]},
+	obj {
+		f 	some
+		} @ {:a b :c d}
+} @ { :prefix "H"
+	  :separator "\n"
+	  :child-separator ";" 
+	}
+
+(def order (prototype {:id guid :birthday (field "age [20 50:10 70]")} {:name "order" cardinality (range 10 20)}))
+
+field 		genexpr	{:a b :c d :e f}
+level	{red blue green}
+(use fabulate.sqltypes)
+
+sql			nvarchar(50)
+id 			uniqueidentifier
+birthday 	datetime,
+price		money,
+
+XmlSchema
+<order>
+	<id type=attribute>
+	<orderLine min=10 max=20>
+
+# ----------------------
+
+prototype orderline {
+	lineno		sequence $parent.id
+	item      	pick @item
+	itemid 		$item.id
+	qty			int [1 100]
+	cost 		$item.price
+}
+
+# child references OO style, not parent references SQL style!
+# specified in the prototype, or in the config binding, where appropriate
+# cross references?!?
+
+generate webshop {
+	items	250K item
+	customers 1K customer {
+		[1 10] order {[1 100] orderline}
+		[0 3] contact
+	}
+}
+
+adapter webdb database "server=.;trusted=true;initial catalog=webshop"
+{
+	customer dbo.Customer 
+	# item dbo.Artiklar
+	order orders
+}
+
+adapter name type "connectionstring" {
+	proto adapter connstr configmap
+	name adapter connstr configmap
+}
+
+adapter webfs filesystem "shopdata" {
+	item file "items/items.txt" {:type flat :format "%s;%s;%.2f" :fields [$id $category $price]}
+	orders file "orders/order-$id.txt" 
+	{
+		:type flat
+		:order 	{:format "H%s;%s;" :fields [$id $date] :separator :newline}
+		:orderline {:format "L%06f;%s;%s;%.2f" :fields [$lineno $itemid $qty $cost]}
+	}
+	xorders "xml/order-$id.xml" xml
+}
+
+# mix output destinations
+output webshop {
+	items webfs.item
+	customers webdb.customer
+	order webfs.xorders
+}
+
+output webshop db("server=.;trusted=true;initial catalog=webshop") {
+	250K items "items/items.txt" "%s;%s;%.2f" $id $category $price
+	10K orders "orders/orders.txt" {
+		order 	dbo.SalesOrder
+		orderline dbo.SalesOrderLine
+	}
+}
