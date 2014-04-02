@@ -47,6 +47,6 @@ heading   [0 360]
    Type {one \"the second\" three}
    price price [0 100]"))
 
-(write-to "out-file.csv" fs fields 100)
-(slurp "out-file.csv")
+(write-to "test/output/out-file.csv" fs fields 100)
+(slurp "test/output/out-file.csv")
 

@@ -61,7 +61,7 @@
 heading   [0 360]
 info      format \"Speed %.2f km/h heading %.2f\" $speed $heading
 "
-             file "fabtest.fab"
+             file "test/output/fabtest.fab"
              _ (spit file code)] 
          (main/-main file) => anything
          (main/-main file "2") => anything 
