@@ -79,24 +79,24 @@
        )
 
 (facts "kahn"
-  (def acyclic-g
-    {7 #{11 8}
-     5 #{11}
-     3 #{8 10}
-     11 #{2 9}
-     8 #{9}})
- 
-  (def cyclic-g
-    {7 #{11 8}
-     5 #{11}
-     3 #{8 10}
-     11 #{2 9}
-     8 #{9}
-     2 #{11}}) ;oops, a cycle!
- 
-  (kahn/kahn-sort acyclic-g) => (just [3 5 7 8 10 11 2 9])
-  (kahn/kahn-sort cyclic-g) => nil
-  )
+       (let [acyclic-g {:A1 #{:A2 :B2 :C2}
+                        :B1 #{:A2 :B2 :C2}
+                        :C1 #{:A2 :B2 :C2}
+                        :A2 #{:A3 :B3 :C3}
+                        :B2 #{:A3 :B3 :C3}
+                        :C2 #{:A3 :B3 :C3}}
+             [p1 p2 p3] (partition 3 (kahn/kahn-sort acyclic-g))] 
+         p1 => (just [:A1 :B1 :C1] :in-any-order)
+         p2 => (just [:A2 :B2 :C2] :in-any-order)
+         p3 => (just [:A3 :B3 :C3] :in-any-order)
+         )
+       (let [cyclic-g  {7 #{11 8}
+                        5 #{11}
+                        3 #{8 10}
+                        11 #{2 9}
+                        8 #{9}
+                        2 #{11}}] ; oops, a cycle!
+         (kahn/kahn-sort cyclic-g) => nil))
 
 (facts 
   "generate row" 
