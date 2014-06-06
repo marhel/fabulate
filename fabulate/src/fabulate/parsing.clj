@@ -8,7 +8,7 @@
 (def dsl-parser (insta/parser
     "fields = (<newline> <noise>?)* field ((<newline> <noise>?)+ field)* <newline>?
      field = <noise>? symbol <noise>? ( choice | function ) <noise>? 
-     choice = simple-choice <noise>? ( <':'> <noise>? number )?
+     choice = simple-choice ( <':'> <noise>? number )?
      function = <noise>? symbol (<noise>? choice)*
      <simple-choice> = string | symbol | number | regex | list | range | paren-function | fieldref
      string = <noise>? <quote> (!quote !escape #'.' | escaped-char)* <quote>
