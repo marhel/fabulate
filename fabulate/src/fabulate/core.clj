@@ -1,4 +1,5 @@
 (ns fabulate.core
+  (:import (java.util Random))
   (:use fabulate.range)
   (:require [fabulate.kahn :as kahn]))
 
@@ -56,7 +57,7 @@
 
 (defn make-rand-seq [seed]
   "Infinite random number sequence maker, with an initial seed for repeatable sequences"
-  (let [r (java.util.Random. seed)]
+  (let [r (Random. seed)]
     (fn nextNumber [n] (lazy-seq 
                          (cons (* n (.nextDouble r)) (nextNumber n))))))
 

@@ -33,8 +33,8 @@
 (defn numeric [token] 
   (if (and (= -1 (.indexOf token "."))
            (= -1 (.indexOf token "E")))
-    (java.lang.Long/parseLong token)
-    (java.lang.Double/parseDouble token)))
+    (Long/parseLong token)
+    (Double/parseDouble token)))
 
 (defn unify-choice
   ([c]

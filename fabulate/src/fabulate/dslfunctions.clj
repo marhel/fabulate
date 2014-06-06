@@ -1,12 +1,14 @@
-(ns fabulate.dslfunctions)
+(ns fabulate.dslfunctions
+  (:import (java.util Date)
+           (java.text SimpleDateFormat)))
 
 (defn age [f] 
   (->> 
     (* f 365.25 24 60 60 1000)
-    (- (java.lang.System/currentTimeMillis))
+    (- (System/currentTimeMillis))
     long
-    (java.util.Date.)
-    (.format (java.text.SimpleDateFormat. "yyyy-MM-dd"))))
+    (Date.)
+    (.format (SimpleDateFormat. "yyyy-MM-dd"))))
 
 (defn magnitude [n]
   (let [abs (if (neg? n) (- n) n)]
