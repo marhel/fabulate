@@ -91,10 +91,10 @@
        )
 
 (facts "comments"
-       (parsing/parse :choice "123 #abc") => (contains {:item 123})
-       (parsing/parse :choice "123 # abc") => (contains {:item 123})
-       (parsing/parse :choice "{123 \"# abc\" 456}") => (contains {:wtree (tree-contains [123 "# abc" 456])})
-       (parsing/parse :choice "{123 456} # abc") => (contains {:wtree (tree-contains [123 456])})
+       (:f (parsing/parse :field "f 123 #abc")) => (contains {:item 123})
+       (:f (parsing/parse :field "f 123 # abc")) => (contains {:item 123})
+       (:f (parsing/parse :field "f {123 \"# abc\" 456}")) => (contains {:wtree (tree-contains [123 "# abc" 456])})
+       (:f (parsing/parse :field "f {123 456} # abc")) => (contains {:wtree (tree-contains [123 456])})
        )
 
 (defn param-contains 
