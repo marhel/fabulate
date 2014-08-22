@@ -56,7 +56,7 @@
        (dsl/price 1.23456789e-8) => 0.0
        )
 
-(facts "main"
+#_(facts "main"
        (let [code "speed     [0 100]
 heading   [0 360]
 info      format \"Speed %.2f km/h heading %.2f\" $speed $heading
