@@ -72,7 +72,7 @@
        (core/choose (parsing/parse :choice "[0:0 100:0]") 0.5) => (roughly 50) ; iffy, should throw!
        (core/choose (parsing/parse :choice "{0 100}") 0.1) => (some-checker 100 0)
        (core/choose (parsing/parse :choice "100") 0.1) => 100
-       (core/choose (parsing/parse :choice "(int [0 100])") 0.5) => 50
+       (core/choose (parsing/parse :choice "(int [0 100])") 0.5) => 73
        (core/choose (parsing/parse :choice "100") 0.1) => 100
        (core/choose (parsing/parse :choice "/<[A-Z]>/") 0.1) => (matches #"<[A-Z]>")
        (core/choose (parsing/parse :choice "/([A-Z])/") 0.1) => (matches #"[A-Z]")
@@ -108,8 +108,19 @@ heading   [0 360]
     (core/fields-by-dep fields) => (just [:heading :speed :info])
     (binding [core/*rnd*  (core/make-rand-seq well-known-seed)]
       (core/generate fields)
-    => {:speed 99.0414373129817, :heading 148.75892158666196, :info "Speed 99,04 km/h heading 148,76"}
+      => {:speed 99.0414373129817, :heading 148.75892158666196, :info "Speed 99,04 km/h heading 148,76"}
 
-     (core/generate fields)
-     => {:speed 7.343842024000635, :heading 254.0389053570916, :info "Speed 7,34 km/h heading 254,04"}
-)))
+      (core/generate fields)
+      => {:speed 7.343842024000635, :heading 254.0389053570916, :info "Speed 7,34 km/h heading 254,04"}
+      )))
+
+(facts
+  "fun with many params picks different param for each"
+  (let [dsl "nums	format \"%s %s %s %s %s %s %s %s %s %s\" {1 2 3 4 5 6 7 8 9 10} {1 2 3 4 5 6 7 8 9 10} {1 2 3 4 5 6 7 8 9 10} {1 2 3 4 5 6 7 8 9 10} {1 2 3 4 5 6 7 8 9 10} {1 2 3 4 5 6 7 8 9 10} {1 2 3 4 5 6 7 8 9 10} {1 2 3 4 5 6 7 8 9 10} {1 2 3 4 5 6 7 8 9 10} {1 2 3 4 5 6 7 8 9 10}
+"
+        fields (parsing/parse :fields dsl)]
+    (binding [core/*rnd*  (core/make-rand-seq well-known-seed)]
+      (let [ns (:nums (core/generate fields))]
+        (count
+          (distinct (.split ns " ")))) =not=> 1             ; There's a one in a billion (10^9) risk that this test fails by coincident
+      )))

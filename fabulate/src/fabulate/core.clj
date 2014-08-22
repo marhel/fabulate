@@ -61,7 +61,9 @@
     (fn nextNumber [n] (lazy-seq 
                          (cons (* n (.nextDouble r)) (nextNumber n))))))
 
-(defmulti choose (fn [tree r] 
+(def ^:dynamic *rnd* (make-rand-seq (System/currentTimeMillis)))
+
+(defmulti choose (fn [tree r]
                    (do 
                      ;(prn (:type tree) r) 
                      (:type tree))))
@@ -80,10 +82,14 @@
   (range-lookup tree r))
 
 ; A function will need to consume as many random numbers as it has parameters, 
-; as it will call choose on each argument
-(defmethod choose :function [tree r]  
+; as it will call choose on each argument, however, it makes a private rand-seq for this purpose.
+; This allows me to keep the old interface with a single random float.
+; In order to try to keep the repeatability for randomness, it uses the random it got
+; as a seed for the new rand-seq.
+(defmethod choose :function [tree r]
   (let [params (:params tree)
-        vals (map #(choose % r) params)] 
+        param-rand (make-rand-seq (* Long/MAX_VALUE r))
+        vals (map #(choose %1 %2) params (param-rand 1))]
     ; (println "calling" (:fn tree) vals)
     (apply (:fn tree) vals)))
 
@@ -99,8 +105,6 @@
         result (generator)
         extractor (if (vector? result) first identity)]
     (extractor result)))
-
-(def ^:dynamic *rnd* (make-rand-seq (System/currentTimeMillis)))
 
 (defn resolve-field
   [f fields]
