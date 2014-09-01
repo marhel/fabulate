@@ -111,9 +111,9 @@
   (let [field (f fields)]
     {f (choose field (first (*rnd* 1)))}))
 
-(defn flatten-tree [wt] (when (seq wt) 
-                          (conj 
-                            (concat (flatten-tree (:less wt)) 
+(defn flatten-tree [wt] (when (seq wt)
+                          (conj
+                            (concat (flatten-tree (:less wt))
                                     (flatten-tree (:more wt)))
                             (:item wt))))
 
@@ -131,12 +131,20 @@
 (defmethod depends-on :list [field] (dependencies (flatten-tree (:wtree field))))
 (defmethod depends-on :function [field] (dependencies (:params field)))
 
-(defn fields-by-dep [fields]
-	  (->> (keys fields)
-     (map (fn [kw] {kw (depends-on (kw fields))})) 
-     (into  {})
-     (kahn/kahn-sort)
-     (reverse)))
+(defn fields-by-dep
+  ([fields selection]
+   (let [fs
+         (->> (filter (set selection) (keys fields))
+              (map (fn [kw] {kw (depends-on (kw fields))}))
+              (into {})
+              (kahn/kahn-sort)
+              (reverse))
+         new-deps? (= (set fs) (set selection))]
+     (if new-deps?
+       fs
+       (fields-by-dep fields fs))))
+  ([fields]
+   (fields-by-dep fields (keys fields))))
 
 (defn generate
   ([fields]

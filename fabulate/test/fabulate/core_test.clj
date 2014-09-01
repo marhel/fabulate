@@ -98,20 +98,35 @@
                         2 #{11}}] ; oops, a cycle!
          (kahn/kahn-sort cyclic-g) => nil))
 
-(facts 
-  "generate row" 
+(facts
+  "field dependencies can be deduced, even from a subset of fields"
+  (let [dsl "speed     [0 100]
+info      format \"Speed %.2f km/h Heading %.2f\" $speed $heading
+heading   [0 360]
+distance  [10 40]
+extended  format \"%s Distance %.2f\" $info $distance
+"
+        fields (parsing/parse :fields dsl)]
+    (core/fields-by-dep fields) => (just [:heading :distance :speed :info :extended])
+    (core/fields-by-dep fields [:info]) => (just [:heading :speed :info]) ; includes dependencies of the specified subset as well
+    (core/fields-by-dep fields [:extended]) => (just [:heading :distance :speed :info :extended]) ; includes dependencies recursively
+    (core/fields-by-dep fields [:info :heading :speed]) => (just [:heading :speed :info])
+    (core/fields-by-dep fields [:speed]) => (just [:speed])))
+
+(facts
+  "generate row generates only requested fields"
   (let [dsl "speed     [0 100]
 info      format \"Speed %.2f km/h heading %.2f\" $speed $heading
 heading   [0 360]
+distance  [10 40]
 "
         fields (parsing/parse :fields dsl)]
-    (core/fields-by-dep fields) => (just [:heading :speed :info])
     (binding [core/*rnd*  (core/make-rand-seq well-known-seed)]
-      (core/generate fields)
-      => {:speed 99.0414373129817, :heading 148.75892158666196, :info "Speed 99,04 km/h heading 148,76"}
-
-      (core/generate fields)
-      => {:speed 7.343842024000635, :heading 254.0389053570916, :info "Speed 7,34 km/h heading 254,04"}
+      (core/generate fields) => {:distance 39.71243119389451 :speed 25.225544079393046, :heading 148.75892158666196, :info "Speed 25,23 km/h heading 148,76"}
+      (core/generate fields) => {:distance 26.081935237588418 :speed 41.019319216746965 :heading 26.437831286402286 :info "Speed 41,02 km/h heading 26,44"}
+      (core/generate fields [:speed]) => {:speed 89.67743965315603}
+      (core/generate fields [:info]) => {:info "Speed nu km/h heading nu"} ; generate won't automatically include dependent fields (which resolves to nil (or "nu"(ll) in the string formatting)
+      (core/generate fields [:heading :speed :info]) => {:heading 160.07859470155734, :info "Speed 11,22 km/h heading 160,08", :speed 11.219855161526382}
       )))
 
 (facts
