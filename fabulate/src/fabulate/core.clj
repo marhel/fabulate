@@ -151,3 +151,12 @@
     (generate fields (fields-by-dep fields)))
   ([fields fields-in-dep-order]
     (reduce (fn [row f] (into row (binding [*row* row] (resolve-field f fields)))) {} fields-in-dep-order)))
+
+(defmulti write-to (fn [opts fields]
+                     (:writer opts)))
+
+(defn subcommand [argv] (keyword (first argv)))
+(defmulti parse-subcommand subcommand)
+
+(defmethod parse-subcommand :default [argv] {})
+

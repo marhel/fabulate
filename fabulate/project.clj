@@ -7,6 +7,7 @@
   :dependencies [[org.clojure/clojure "1.6.0"]
                  [instaparse "1.3.3"]
                  [re-rand "0.1.0"]
-                 [org.clojure/data.csv "0.1.2"]]
+                 [org.clojure/data.csv "0.1.2"]
+                 [org.clojure/tools.cli "0.3.1"]]
   :profiles {:dev {:dependencies [[midje "1.6.3"]
                                   [org.clojure/tools.trace "0.7.8"]]}})
