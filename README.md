@@ -105,6 +105,7 @@ There are a few generic parameters valid for all writers
 	-s 		--select FIELDS Comma separated list of field to include in the output (default: all)
 
 And each writer has it own set of parameters. For now *csv* is the only available writer.
+For now, error reporting from the command line parser is basically nonexistent. Also, when specifying a unknown writer name, you get a long error mesage with a stack trace, and the program exists. This will improve at some point in the future.
 
 ## Writers
 A writer is a component that knows how to output the generated data in a specific way, such as a specific file format, or connecting to a specific database.
@@ -117,7 +118,7 @@ The csv writer has the following additional parameters, that need to go after th
 	-d 		--destination FILE 	Destination file (defaults to outputting data to the console)
 	-s 		--separator CHAR	Field separator to use
 
-If you cannot get the field separator to work as you expect, please be warned that some characters are specially by your shell such as semicolon, question mark, asterisk or backslash and may need to be escaped or quoted, depending on your specific shell.
+If you cannot get the field separator to work as you expect, please be warned that some characters are treated differently by your shell such as semicolon, question mark, asterisk or backslash and may need to be escaped or quoted in order to become a valid parameter value, depending on your specific shell.
 
 Note that at the present time the short argument name "-s" is used both as a generic argument (for selecting particlular fields to output) and in the CSV writer to indicate the desired separator character. This works only because you cannot give generic arguments after the writer name argument, or writer-specific arguments before the writer name, so specifying
 
@@ -141,6 +142,6 @@ Fabulate's parser is built with the excellent [instaparse parsing library](https
 
 ## License
 
-Copyright © 2013 Martin Hellspong
+Copyright © 2013, 2014 Martin Hellspong
 
 Distributed under the Eclipse Public License, the same as Clojure.
