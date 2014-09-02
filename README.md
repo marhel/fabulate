@@ -105,7 +105,8 @@ There are a few generic parameters valid for all writers
 	-s 		--select FIELDS Comma separated list of field to include in the output (default: all)
 
 And each writer has it own set of parameters. For now *csv* is the only available writer.
-For now, error reporting from the command line parser is basically nonexistent. Also, when specifying a unknown writer name, you get a long error mesage with a stack trace, and the program exists. This will improve at some point in the future.
+
+Be warned that error reporting from the command line parser is basically nonexistent. Also, when specifying a unknown writer name, you get a long error mesage with a stack trace, and the program exits. This will improve at some point in the future.
 
 ## Writers
 A writer is a component that knows how to output the generated data in a specific way, such as a specific file format, or connecting to a specific database.
