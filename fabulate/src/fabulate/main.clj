@@ -1,7 +1,8 @@
 (ns fabulate.main
   (:use fabulate.core)
   (:require [fabulate.parsing :as parsing])
-  (:require [clojure.tools.cli :as cli]))
+  (:require [clojure.tools.cli :as cli])
+  (:require [fabulate.writer.csv]))
 
 (def cli-options
   [;; First three strings describe a short-option, long-option with optional

@@ -17,22 +17,23 @@ If we take a look at the file named "items.fab" in the samples folder, it contai
 
 You can then get Fabulate to generate items according to this specification. In the project directory run the command
 
-	lein run samples/items.fab
+	lein run -i samples/items.fab csv
 
-Fabulate will now generate a number of sample items for you and output them to the console. For example;
+Fabulate will now generate a number of sample items for you in csv-format, and output them to the console. For example;
 
-	{:category "Office", :id "SK505-03z", :price 776.0, :blurb "Item SK505-03z is a nice Office product for only €776,00"}
-	{:category "Tools", :id "IF633-18p", :price 957.6, :blurb "Item IF633-18p is a nice Tools product for only €957,60"}
-	{:category "Tools", :id "XV045-58s", :price 21.3, :blurb "Item XV045-58s is a nice Tools product for only €21,30"}
-	{:category "Construction", :id "UA035-16c", :price 687.3, :blurb "Item UA035-16c is a nice Construction product for only €687,30"}
-	{:category "Garden", :id "RY150-55j", :price 831.5, :blurb "Item RY150-55j is a nice Garden product for only €831,50"}
-	{:category "Home", :id "WI752-64q", :price 289.9, :blurb "Item WI752-64q is a nice Home product for only €289,90"}
-	{:category "Office", :id "EZ888-04h", :price 345.7, :blurb "Item EZ888-04h is a nice Office product for only €345,70"}
-	{:category "Tools", :id "OF871-65e", :price 570.2, :blurb "Item OF871-65e is a nice Tools product for only €570,20"}
-	{:category "Home", :id "HR467-46b", :price 604.8, :blurb "Item HR467-46b is a nice Home product for only €604,80"}
-	{:category "Construction", :id "GT654-47z", :price 459.1, :blurb "Item GT654-47z is a nice Construction product for only €459,10"}
+id,category,price,blurb
+HP500-68q,Office,844.5,"Item HP500-68q is a nice Office product for only €844,50"
+WO299-02g,Office,188.3,"Item WO299-02g is a nice Office product for only €188,30"
+OW828-76x,Construction,735.7,"Item OW828-76x is a nice Construction product for only €735,70"
+TM275-55y,Tools,234.1,"Item TM275-55y is a nice Tools product for only €234,10"
+XZ777-90i,Home,212.6,"Item XZ777-90i is a nice Home product for only €212,60"
+CN335-82r,Home,670.0,"Item CN335-82r is a nice Home product for only €670,00"
+IH006-11i,Garden,936.5,"Item IH006-11i is a nice Garden product for only €936,50"
+GJ371-06k,Garden,360.5,"Item GJ371-06k is a nice Garden product for only €360,50"
+UM487-82y,Home,731.6,"Item UM487-82y is a nice Home product for only €731,60"
+UL110-77u,Tools,494.9,"Item UL110-77u is a nice Tools product for only €494,90"
 
-(File output with formatting support is planned next)
+If you'd rather output the CSV-data to a file, you can do that as well, see the command line reference.
 
 ## Syntax
 
