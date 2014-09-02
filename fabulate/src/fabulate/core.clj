@@ -64,9 +64,8 @@
 (def ^:dynamic *rnd* (make-rand-seq (System/currentTimeMillis)))
 
 (defmulti choose (fn [tree r]
-                   (do 
-                     ;(prn (:type tree) r) 
-                     (:type tree))))
+                   ;(prn (:type tree) r)
+                   (:type tree)))
 
 (defmethod choose :choice [tree r]
    (:item tree))
@@ -89,7 +88,7 @@
 (defmethod choose :function [tree r]
   (let [params (:params tree)
         param-rand (make-rand-seq (* Long/MAX_VALUE r))
-        vals (map #(choose %1 %2) params (param-rand 1))]
+        vals (map choose params (param-rand 1))]
     ; (println "calling" (:fn tree) vals)
     (apply (:fn tree) vals)))
 

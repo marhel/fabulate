@@ -65,10 +65,9 @@
 (defmulti simplify 
   (fn 
     ([items]) ; returns nil, and will end up at the :default handler
-    ([items pweight] 
-      (do 
-        ;(prn (:type arr) r) 
-        (first items)))))
+    ([items pweight]
+     ;(prn (:type arr) r)
+     (first items))))
 
 (defmethod simplify :choice [items pweight]
   (let [[kw weight choice] items]
