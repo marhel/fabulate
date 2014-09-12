@@ -106,13 +106,13 @@ There are a few generic parameters valid for all writers
 
 And each writer has it own set of parameters. For now *csv* is the only available writer.
 
-Be warned that error reporting from the command line parser is basically nonexistent. Also, when specifying a unknown writer name, you get a long error mesage with a stack trace, and the program exits. This will improve at some point in the future.
+Be warned that error reporting from the command line parser is basically nonexistent. Also, when specifying an unknown writer name, you get a long error message with a stack trace, and the program exits. This will improve at some point in the future.
 
 ## Writers
 A writer is a component that knows how to output the generated data in a specific way, such as a specific file format, or connecting to a specific database.
 
 ### The CSV writer
-The CSV writer formats data according to the the [RFC4180](http://tools.ietf.org/html/rfc4180) specification (using the [clojure.data.csv](https://github.com/clojure/data.csv) library.
+The CSV writer formats data according to the the [RFC4180](http://tools.ietf.org/html/rfc4180) specification (using the [clojure.data.csv](https://github.com/clojure/data.csv) library.)
 
 The csv writer has the following additional parameters, that need to go after the name of the writer.
 
@@ -121,11 +121,11 @@ The csv writer has the following additional parameters, that need to go after th
 
 If you cannot get the field separator to work as you expect, please be warned that some characters are treated differently by your shell such as semicolon, question mark, asterisk or backslash and may need to be escaped or quoted in order to become a valid parameter value, depending on your specific shell.
 
-Note that at the present time the short argument name "-s" is used both as a generic argument (for selecting particlular fields to output) and in the CSV writer to indicate the desired separator character. This works only because you cannot give generic arguments after the writer name argument, or writer-specific arguments before the writer name, so specifying
+Note that at the present time the short argument name "-s" is used both as a generic argument (for selecting particular fields to output) and in the CSV writer to indicate the desired separator character. This works only because you cannot give generic arguments after the writer name argument, or writer-specific arguments before the writer name, so specifying
 
 	lein run -i samples/items.fab -s id,price csv -s:
 
-may indeed be confusing to the user, but is perfectly unambigous to the command line parser.
+may indeed be confusing to the user, but is perfectly unambiguous to the command line parser.
 
 ## Development
 This just serves to remind you that when developing, one can also try;
