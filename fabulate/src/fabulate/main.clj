@@ -33,5 +33,6 @@
         fields (parsing/parse :fields code)
         opts (if (:select opts) opts (assoc opts :select (map name (keys fields))))
         ]
-    (println "Fabulate 0.1α - Martin Hellspong")
+    (binding [*out* *err*]
+      (println "Fabulate 0.1α - Martin Hellspong"))
     (write-to opts fields)))
