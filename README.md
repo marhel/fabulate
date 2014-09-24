@@ -9,7 +9,7 @@ You can run some of the included samples using the lein shell script (from the [
 If we take a look at the file named "items.fab" in the samples folder, it contains the following;
 
 	id			/[A-Z]{2}\d{3}-\d{2}[a-z]/ 	# a value matching the specified regex
-	category	{Home Office Garden Construction Tools}	# a few possible choices
+	category	<Home Office Garden Construction Tools>	# a few possible choices
 	price		price [10 1000]		# a range of doubles, rounded as price
 
 	# a column may include the value of other columns
@@ -52,19 +52,19 @@ A literal is a value representing itself. Simple words need not be quoted. Examp
 
 ### Multiple choice
 
-Curly brackets indicate possible choices.
+Angle brackets indicate possible choices.
 
-	{Red Green Blue}	# one of these three colors will be chosen, equally likely.
+	<Red Green Blue>	# one of these three colors will be chosen, equally likely.
 
 Individual choices can also be weighted, if they are to be more or less likely.
 
-	{Red:3 Green:20 Blue:7}		# one of these three colors will be chosen, according to their weight.
+	<Red:3 Green:20 Blue:7>		# one of these three colors will be chosen, according to their weight.
 
 Adding these weights now makes Green the most likely choice (probability 20/30th or about 66%), followed by Blue (7/30th, or about 23%) and then Red (3/30th or 10%). Choices without weights are considered to have a weight of one.
 
 ### Ranges
 
-Square brackets indicate ranges of possible values.
+Square brackets indicate ranges of possible numeric values.
 
 	[1 10]	# yields any decimal value between 1 (inclusive) and 10 (exclusive), equally likely, such as 4.56362721652
 
