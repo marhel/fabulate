@@ -32,20 +32,20 @@
        )
 
 (facts "list of choices"
-       (parsing/parse :choice "{red green blue}") => (contains {:type :list :wtree (count-is 3)})
-       (parsing/parse :choice "{red green blue}") => (contains {:type :list :wtree (tree-contains ["red" "green" "blue"])})
-       (parsing/parse :choice "{red \"green\\\" blue\"}") => (contains {:type :list :wtree (tree-contains ["red" "green\" blue"])})
-       (parsing/parse :choice "{1 2 3}") => (contains {:type :list :wtree (count-is 3)})
-       (parsing/parse :choice "{1 2 3}") => (contains {:wtree (tree-contains [1 2 3])})
-       (parsing/parse :choice "{1 2 3}") => (contains {:wtree (tree-contains [1 1 1] :weight)})
+       (parsing/parse :choice "<red green blue>") => (contains {:type :list :wtree (count-is 3)})
+       (parsing/parse :choice "<red green blue>") => (contains {:type :list :wtree (tree-contains ["red" "green" "blue"])})
+       (parsing/parse :choice "<red \"green\\\" blue\">") => (contains {:type :list :wtree (tree-contains ["red" "green\" blue"])})
+       (parsing/parse :choice "<1 2 3>") => (contains {:type :list :wtree (count-is 3)})
+       (parsing/parse :choice "<1 2 3>") => (contains {:wtree (tree-contains [1 2 3])})
+       (parsing/parse :choice "<1 2 3>") => (contains {:wtree (tree-contains [1 1 1] :weight)})
 )
 
 (facts "list of weighted choices"
-       (parsing/parse :choice "{red green:70 blue}") => (contains {:wtree (tree-contains [1 1 70] :weight)})
-       (parsing/parse :choice "{red:10 green:70 blue:20}") => (contains {:type :list :wtree (tree-contains ["red" "green" "blue"])})
-       (parsing/parse :choice "{red:10 green:70 blue:20}") => (contains {:type :list :wtree (tree-contains [10 20 70] :weight)})
-       (parsing/parse :choice "{1:20 2:30 3:40}") => (contains {:type :list :wtree (count-is 3)})
-       (parsing/parse :choice "{1:20 2:30 3:40}") => (contains {:type :list :wtree (tree-contains [30 20 40] :weight)})
+       (parsing/parse :choice "<red green:70 blue>") => (contains {:wtree (tree-contains [1 1 70] :weight)})
+       (parsing/parse :choice "<red:10 green:70 blue:20>") => (contains {:type :list :wtree (tree-contains ["red" "green" "blue"])})
+       (parsing/parse :choice "<red:10 green:70 blue:20>") => (contains {:type :list :wtree (tree-contains [10 20 70] :weight)})
+       (parsing/parse :choice "<1:20 2:30 3:40>") => (contains {:type :list :wtree (count-is 3)})
+       (parsing/parse :choice "<1:20 2:30 3:40>") => (contains {:type :list :wtree (tree-contains [30 20 40] :weight)})
 )
 (defn range-contains 
   ([expected-elements]
@@ -70,8 +70,8 @@
        )
 
 (facts "non-ASCII character handling"
-       (parsing/parse :choice "{abc åÄÖ 123}") => (contains {:type :list :wtree (tree-contains ["abc" "åÄÖ" 123])})
-       (parsing/parse :choice "{üb.er lambda_λ}") => (contains {:type :list :wtree (tree-contains ["üb.er" "lambda_λ"])})
+       (parsing/parse :choice "<abc åÄÖ 123>") => (contains {:type :list :wtree (tree-contains ["abc" "åÄÖ" 123])})
+       (parsing/parse :choice "<üb.er lambda_λ>") => (contains {:type :list :wtree (tree-contains ["üb.er" "lambda_λ"])})
        )
 
 (facts "regex"
@@ -82,7 +82,7 @@
        (parsing/parse :choice "a123") => (contains {:item "a123"})
        (parsing/parse :choice "-123") => (contains {:item -123})
        (parsing/parse :choice "12a3bc") => (throws NumberFormatException #"12a3bc")
-       (parsing/parse :choice "{123 \"abc\"}") => (contains {:wtree (tree-contains [123 "abc"])})
+       (parsing/parse :choice "<123 \"abc\">") => (contains {:wtree (tree-contains [123 "abc"])})
        (parsing/parse :choice "a123.456") => (contains {:item "a123.456"})
        (parsing/parse :choice "123.456") => (contains {:item 123.456})
        (parsing/parse :choice "-123.456") => (contains {:item -123.456})
@@ -93,8 +93,8 @@
 (facts "comments"
        (:f (parsing/parse :field "f 123 #abc")) => (contains {:item 123})
        (:f (parsing/parse :field "f 123 # abc")) => (contains {:item 123})
-       (:f (parsing/parse :field "f {123 \"# abc\" 456}")) => (contains {:wtree (tree-contains [123 "# abc" 456])})
-       (:f (parsing/parse :field "f {123 456} # abc")) => (contains {:wtree (tree-contains [123 456])})
+       (:f (parsing/parse :field "f <123 \"# abc\" 456>")) => (contains {:wtree (tree-contains [123 "# abc" 456])})
+       (:f (parsing/parse :field "f <123 456> # abc")) => (contains {:wtree (tree-contains [123 456])})
        )
 
 (defn param-contains 
@@ -133,12 +133,12 @@
        (parsing/parse :fields "speed [0 100]") => (contains {:speed (contains {:type :range})}) 
        (parsing/parse :fields 
 "speed     [0 100]
-direction   {N NW W SW S SE E NE}
+direction   <N NW W SW S SE E NE>
 ") => (contains {:speed (contains {:type :range}) 
                  :direction (contains {:type :list})}) 
        (parsing/parse :fields 
 "speed     [0 100] # some comment
-direction   {N NW W SW S SE E NE}") => (contains {:speed (contains {:type :range}) 
+direction   <N NW W SW S SE E NE>") => (contains {:speed (contains {:type :range})
                  :direction (contains {:type :list})}) 
 
        (parsing/parse :fields"

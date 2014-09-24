@@ -15,7 +15,7 @@
      regex = <noise>? <'/'> (!'/' #'.' | <'\\\\'> '/' )* <'/'>
      symbol = !number word
      number = #'[-+]?[0-9][.\\w]*'
-     list = <noise>? <'{'> (<noise>? choice)+ <noise>? <'}'>
+     list = <noise>? <'<'> (<noise>? choice)+ <noise>? <'>'>
      range = <noise>? <'['> (<noise>? &number choice)+ <noise>? <']'>
      <paren-function> = <noise>? <'('> function <noise>? <')'>
      fieldref = <'$'> symbol

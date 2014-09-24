@@ -64,13 +64,13 @@
     (fn [actual] (not (nil? (re-matches pattern actual)))))
 
 (facts "depends-on"
-       (core/depends-on (:zero (parsing/parse :field "zero {$one two $three}"))) => (just #{:one :three})       
+       (core/depends-on (:zero (parsing/parse :field "zero <$one two $three>"))) => (just #{:one :three})
        (core/depends-on (:zero (parsing/parse :field "zero /123/"))) => (just #{}))
 
 (facts "choose"
        (core/choose (parsing/parse :choice "[0 100]") 0.5) => (roughly 50)
        (core/choose (parsing/parse :choice "[0:0 100:0]") 0.5) => (roughly 50) ; iffy, should throw!
-       (core/choose (parsing/parse :choice "{0 100}") 0.1) => (some-checker 100 0)
+       (core/choose (parsing/parse :choice "<0 100>") 0.1) => (some-checker 100 0)
        (core/choose (parsing/parse :choice "100") 0.1) => 100
        (core/choose (parsing/parse :choice "(int [0 100])") 0.5) => 73
        (core/choose (parsing/parse :choice "100") 0.1) => 100
