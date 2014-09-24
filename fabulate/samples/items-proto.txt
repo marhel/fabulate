@@ -1,27 +1,120 @@
-prototype item {
-	id			/[A-Z]{2}\d{3}-\d{2}[a-z]/ 	# a value matching the specified regex
-	category	{Home Office Garden Construction Tools}	# a few possible choices
-	price		price [10 1000]		# a range of doubles, rounded as price
+# this is just a scratchpad for experimenting with potential syntax of different features
 
+aliases {
+	yesNo	<yes no>
+	bool	<true false>
+	itemNo	/[A-Z]{2}\d{3}-\d{2}[a-z]/
+}
+
+prototype defaultitem {
+	id			/[A-Z]{2}\d{3}-\d{2}[a-z]/ 	# a value matching the specified regex
+	category	<Office:500 Garden:300 Tools:200 undefined:20>	# a few possible choices, 'undefined' keyword
+	price		price [10 1000]		# a range of doubles, rounded as price
+	purchPrice	price (* [0.3 0.9] $price)
 	# a column may include the value of other columns
 	blurb		format "Item %s is a nice %s product for only €%.2f" $id $category $price
 }
 
-prototype customer {
+# prototype inheritance; overwrite + add + remove
+prototype construction : defaultitem
+{
+	category	Construction
+	price		[1000 6000]
+	blurb		"Build good stuff with the %s with a %d year warranty!" $id $warranty
+	warranty 	int [1 10]
+}
+
+prototype home : defaultitem except blurb, id
+{
+	category	Home
+	price		[10 600]
+	blurb		undefined	# or alternatively to an "except" keyword
+}
+
+prototype addons
+{
+	extendedWarranty 	int [1 10]
+	insurance			yesNo	
+	onSiteSupport		yesNo
+}
+
+prototype items
+{
+include:
+	# is the local name useful?
+	baseitem	<@defaultitem:50 @construction:20 @home:10>
+	addons		@addons
+
+fields:
+	reviewed	yesNo
+	price		+ (* 10 $warranty) $price 		# not recursive, $price refers to included base price
+}
+
+prototype customer 
+{
 	id		int
 	name	/[A-Z]+/
 	visitingAddress	@address
-	billingAddress	{$visitingAddress:10 new($visitingAddress street)}
-	shippingAddress	{$visitingAddress:10 new($visitingAddress street)}
+	# same billing address most of the time, but sometimes with a different street
+	billingAddress	<$visitingAddress:10 new($visitingAddress street)>
+	shippingAddress	<$visitingAddress:10 new($visitingAddress street)>
 }
 
-prototype address {
-	country		string
-	street		string
-	city		string
+populations {
+	externalItems 	webdb.items backing @items
+	mixedItems 		webdb.items fillWith @items : [1000 2000]
+	defaultItems    @items : 5000
+	orders			webfs.orders backing @order : [1000 2000]
+	# literal populations
 }
 
-prototype contact {
+population grades
+{
+	data	list {A B C D E F}	# an array/list of six items
+}
+
+population allCities
+{
+	cities1			list {				# inline records
+		{
+			name		Berlin
+		 	population 	3501872
+		 	country		Germany
+		}
+		{
+			name		London
+		 	population 	8174000
+		 	country		"Great Britain"
+		 	isUnion		true
+		}
+	}
+	randomNordic	{
+			name		/(Stor|Lille|Sund|Lund|Åker|Lind)(by|mo|ås|fält|heim|boda|stad)/
+		 	population 	[5K 1M]
+		 	country		<Sweden Norway Finland Denmark Iceland>
+		} : 120
+	african		@africanCity : 20
+	cities2			table {		# inline table formatted data (tab separated)
+		name	population	country	isUnion
+		Berlin	3501872 Germany
+		London	8174000 "Great Britain"	true
+	}
+	cities3		webfs.cities
+} with {:weightedBy population :limit [2K 3K]}
+
+prototype address
+{
+	init:
+		aCity		sample @city
+	fields:
+		city 		$aCity.name
+		country		$aCity.country
+		street		string
+		streetNo	int [1 2000]
+}
+
+prototype contact 
+{
 	firstname	string
 	lastname	string
 	birthday	age [20 50:10 70]
@@ -31,22 +124,22 @@ prototype order {
 	id    		guid
 	date		age step [1 4]
 	member		<gold silver standard>
-	orderline 	{
-		lineno		sequence $parent.id
-		item      	pick @item
+	orderline 	orderBy itemid {
+		lineno		sequence $parent.id 				# restart sequence on each new parentid
+		item      	sample @defaultItems $parent.id 	# without replacement per parent.id (reset population on new != last)
 		itemid 		$item.id
 		qty			int [1 100]
 		cost 		$item.price
-	}
+	} : [1 100]
 }
 
 # ----------------------
 order {
-	f some @ {cardinality [10 20]},
+	f some with {cardinality [10 20]},
 	obj {
 		f 	some
-		} @ {:a b :c d}
-} @ { :prefix "H"
+		} with {:a b :c d}
+} with { :prefix "H"
 	  :separator "\n"
 	  :child-separator ";" 
 	}
@@ -70,8 +163,10 @@ XmlSchema
 # ----------------------
 
 prototype orderline {
-	lineno		sequence $parent.id
+init:
 	item      	pick @item
+fields:
+	lineno		sequence $parent.id
 	itemid 		$item.id
 	qty			int [1 100]
 	cost 		$item.price
@@ -82,11 +177,11 @@ prototype orderline {
 # cross references?!?
 
 generate webshop {
-	items	250K item
-	customers 1K customer {
-		[1 10] order {[1 100] orderline}
-		[0 3] contact
-	}
+	items	item : 250K
+	customers customer {
+		order {orderline : [1 100]} : [1 10]
+		contact : [0 3]
+	} : 1K
 }
 
 adapter webdb database "server=.;trusted=true;initial catalog=webshop"
@@ -102,14 +197,13 @@ adapter name type "connectionstring" {
 }
 
 adapter webfs filesystem "shopdata" {
-	item file "items/items.txt" {:type flat :format "%s;%s;%.2f" :fields [$id $category $price]}
-	orders file "orders/order-$id.txt" 
-	{
+	item file "items/items.txt" with {:type flat :format "%s;%s;%.2f" :fields [$id $category $price]}
+	orders file "orders/order-$id.txt" with {
 		:type flat
 		:order 	{:format "H%s;%s;" :fields [$id $date] :separator :newline}
 		:orderline {:format "L%06f;%s;%s;%.2f" :fields [$lineno $itemid $qty $cost]}
 	}
-	xorders "xml/order-$id.xml" xml
+	xorders xml "xml/order-$id.xml"
 }
 
 # mix output destinations
