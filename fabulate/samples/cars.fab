@@ -1,6 +1,6 @@
-brand	{Volvo Ford Opel Audi Porsche}
+brand	<Volvo Ford Opel Audi Porsche>
 name	/[AEIOU][bcdfghjklmnpqrstv][aeiou][bcdfghjklmnpqrstv]/
-variant {GT GTI Turbo i Kombi Sedan Cabriolet 2000}
+variant <GT GTI Turbo i Kombi Sedan Cabriolet 2000>
 regno	/[A-Z]{3} \d{3}/
-phone	{/\+46 [1-9]\d\d? \d{2,3} \d{2} \d{2}/ /0[1-9]\d?\d?-\d{2,3} \d{2} \d{2}/:9}
+phone	</\+46 [1-9]\d\d? \d{2,3} \d{2} \d{2}/ /0[1-9]\d?\d?-\d{2,3} \d{2} \d{2}/:9>
 guid	/[A-F0-9]{8}(-[A-F0-9]{4}){3}-[A-F0-9]{12}/
