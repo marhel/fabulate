@@ -16,7 +16,7 @@ If we take a look at the file named "items.fab" in the samples folder, it contai
 		# a column may include the value of other columns
 		blurb		format "Item %s is a nice %s product for only €%.2f" $id $category $price
 	}
-	
+
 You can then get Fabulate to generate items according to this specification. In the project directory run the command
 
 	lein run -i samples/items.fab csv
@@ -106,12 +106,19 @@ There are a few generic parameters valid for all writers
 	-i 		--input FILE 	Input file with fab column specifications
 	-s 		--select FIELDS Comma separated list of field to include in the output (default: all)
 
-And each writer has it own set of parameters. For now *csv* is the only available writer.
+And each writer has it own set of parameters. At this point *csv* and *json* are the only available writers.
 
 Be warned that error reporting from the command line parser is basically nonexistent. Also, when specifying an unknown writer name, you get a long error message with a stack trace, and the program exits. This will improve at some point in the future.
 
 ## Writers
 A writer is a component that knows how to output the generated data in a specific way, such as a specific file format, or connecting to a specific database.
+
+### The JSON writer
+The JSON writer follows the specification on http://json.org/ (using the [clojure.data.json](https://github.com/clojure/data.json) library.)
+
+The JSON writer does not have any additional parameters at this time.
+
+	lein run -i samples/items.fab json
 
 ### The CSV writer
 The CSV writer formats data according to the the [RFC4180](http://tools.ietf.org/html/rfc4180) specification (using the [clojure.data.csv](https://github.com/clojure/data.csv) library.)
