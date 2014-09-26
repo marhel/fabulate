@@ -130,15 +130,18 @@
                                                         :params (param-contains {:type :range})})})}))
 
 
-(def dashboard-contents (contains {:speed (contains {:type :range})
-                                   :heading (contains {:type :range})
-                                   :info (contains {:type :function
-                                                    :name "format"
-                                                    :params (param-contains {:type :choice}
-                                                                            {:type :field
-                                                                             :field :speed}
-                                                                            {:type :field
-                                                                             :field :heading})})}))
+(def dash-fields (contains {:speed   (contains {:type :range})
+                            :heading (contains {:type :range})
+                            :info    (contains {:type   :function
+                                                :name   "format"
+                                                :params (param-contains {:type :choice}
+                                                                        {:type  :field
+                                                                         :field :speed}
+                                                                        {:type  :field
+                                                                         :field :heading})})}))
+(def dashboard-contents (contains {:type :prototype
+                                   :fields dash-fields}))
+
 (facts "multiple fields"
        (parsing/parse :fields "speed [0 100]") => (contains {:speed (contains {:type :range})}) 
        (parsing/parse :fields 
@@ -156,7 +159,7 @@ info      format \"Speed %s km/h heading %s\" $speed $heading # with comment
 
    # these are just supporting fields, used for the calculation of the info-field
    speed     [0 100] # with comment
-   heading   [0 360]") => dashboard-contents
+   heading   [0 360]") => dash-fields
 )
 
 (facts "single prototype"
@@ -183,6 +186,47 @@ prototype dashboard {
    # these are just supporting fields, used for the calculation of the info-field
    speed     [0 100] # with comment
    heading   [0 360]
-}") => (contains {:item (contains {:id (contains {:type :regex})})
+ }
+ ") => (contains {:item      (contains {:type :prototype
+                                        :fields (contains {:id (contains {:type :regex})})})
                   :dashboard dashboard-contents}))
 
+(facts "nested prototype"
+       (parsing/parse :prototype "
+  prototype item
+  {
+      id  /[A-Z]\\d{3}/
+      dashboard {
+         info      format \"Speed %s km/h heading %s\" $speed $heading # with comment
+         # these are just supporting fields, used for the calculation of the info-field
+         speed     [0 100] # with comment
+         heading   [0 360]
+      }
+      trailing [10 200]
+  }") => (contains {:item (contains {:type :prototype
+                                     :fields (contains {:trailing (contains {:type :range})
+                                                        :id        (contains {:type :regex})
+                                                        :dashboard dashboard-contents})})}))
+
+(facts "deeply nested prototypes"
+       (parsing/parse :prototype "
+  prototype outer {
+      middle {
+          item {
+              id  /[A-Z]\\d{3}/
+              dashboard {
+                 info      format \"Speed %s km/h heading %s\" $speed $heading # with comment
+                 # these are just supporting fields, used for the calculation of the info-field
+                 speed     [0 100] # with comment
+                 heading   [0 360]
+              }
+              trailing [10 200]
+          }
+      }
+      outertrailer <yes no>
+  }") => (contains {:outer (contains {:type :prototype
+                                      :fields (contains {:outertrailer (contains {:type :list})
+                                                         :middle (contains {:type :prototype
+                                                                            :fields (contains {:item (contains {:type :prototype
+                                                                                                                :fields (contains {:id  (contains {:type :regex})
+                                                                                                                                   :dashboard dashboard-contents})})})})})})}))

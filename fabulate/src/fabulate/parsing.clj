@@ -6,13 +6,14 @@
   (:require [re-rand.parser.rules :as rr]))
 
 (def dsl-parser (insta/parser
-    "prototypes = (<newline> <noise>?)* prototype ((<newline> <noise>?)+ prototype)* <newline>?
-     prototype = (<newline> <noise>?)* <'prototype'> <noise>? symbol (<newline>? <noise>?)* <'{'> fields (<newline>? <noise>?)* <'}'>
+    "prototypes = (<newline> <noise>?)* prototype ((<newline> <noise>?)+ prototype)* (<newline>? <noise>?)*
+     prototype = (<newline> <noise>?)* <'prototype'> <noise>? symbol (<newline>? <noise>?)* fieldblock
+     fieldblock = <'{'> fields (<newline>? <noise>?)* <'}'>
      fields = (<newline> <noise>?)* field ((<newline> <noise>?)+ field)* <newline>?
-     field = <noise>? symbol <noise>? ( choice | function ) <noise>? 
+     field = <noise>? symbol <noise>? ( choice | function ) <noise>?
      choice = simple-choice ( <':'> <noise>? number )?
      function = <noise>? symbol (<noise>? choice)*
-     <simple-choice> = string | symbol | number | regex | list | range | paren-function | fieldref
+     <simple-choice> = string | symbol | number | regex | list | range | paren-function | fieldref | fieldblock
      string = <noise>? <quote> (!quote !escape #'.' | escaped-char)* <quote>
      regex = <noise>? <'/'> (!'/' #'.' | <'\\\\'> '/' )* <'/'>
      symbol = !number word
@@ -32,7 +33,7 @@
      <word> = #'[\\p{Lu}\\p{Ll}\\d._-]+'
 "))
 
-(defn numeric [token] 
+(defn numeric [token]
   (if (and (= -1 (.indexOf token "."))
            (= -1 (.indexOf token "E")))
     (Long/parseLong token)
@@ -40,7 +41,7 @@
 
 (defn unify-choice
   ([c]
-    (unify-choice c 1)) 
+    (unify-choice c 1))
   ([c w]
     (vector :choice w c)))
 (defn make-rx [& v] [:regex (re-pattern (clojure.string/join v))])
@@ -48,12 +49,12 @@
 
 (declare simplify)
 
-(defn simplify-range 
-  "Turns a complicated range (more than two items) into a list 
+(defn simplify-range
+  "Turns a complicated range (more than two items) into a list
   of simple ranges (two items) weighted by their area"
   [items pweight]
   (let [area-of (fn [pair] (first (apply area pair)))
-        to-range (fn [pair] {:type :range 
+        to-range (fn [pair] {:type :range
                              :weight (area-of pair)
                              :items pair})
         ranges (->>
@@ -64,8 +65,8 @@
     {:type :list :weight pweight :sum (:sum wtree)
      :wtree wtree}))
 
-(defmulti simplify 
-  (fn 
+(defmulti simplify
+  (fn
     ([items]) ; returns nil, and will end up at the :default handler
     ([items pweight]
      ;(prn (:type arr) r)
@@ -82,7 +83,7 @@
         wtree (weighted-tree (map simplify items) :weight)]
     {:type :list :weight pweight :sum (:sum wtree)
      :wtree wtree}))
- 
+
 (defmethod simplify :range [items pweight]
   (let [items (rest items)]
     (if (>= 2 (count items))
@@ -101,8 +102,12 @@
   (into {} (map simplify (rest items))))
 
 (defmethod simplify :prototype [items pweight]
-  (let [[kw name fields] items]
-    {(keyword name) (simplify fields) :type kw :weight pweight }))
+  (let [[kw name fieldblock] items]
+    {(keyword name) (simplify fieldblock) :type kw :weight pweight }))
+
+(defmethod simplify :fieldblock [items pweight]
+  (let [[kw fields] items]
+    {:type :prototype :weight pweight :fields (simplify fields)}))
 
 (defmethod simplify :prototypes [items pweight]
   (into {} (map simplify (rest items))))
@@ -122,7 +127,7 @@
   ([items pweight]
     (throw (IllegalArgumentException. (format "simplification of key %s unknown" (first items))))))
 
-(defn parse 
+(defn parse
   ([start-rule dsl]
     (let [tree (dsl-parser dsl :start start-rule)]
       (if (insta/failure? tree)
