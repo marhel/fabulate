@@ -133,6 +133,29 @@ prototype order {
 	} : [1 100]
 }
 
+Do stuff some number of times per day with increasing timestamps 
+
+prototype customer
+{
+	calls	{
+		time 		date sequence (dateSerial 2012 12 31) [120 15000]  
+		duration	[3 300]
+		endtime		+ time duration
+	} : [2 7]
+}
+start time
+
+datetime [2010 2020] [1 12] [9 17] [0 60] [0 60]
+datetime [2010 2020] [1 12] [0:0 9 13:2 17 24:0] <Monday Tuesday Wednesday Thursday Friday Saturday:0.2 Sunday:0.2> 
+starttime [9 17]
+
+
+(func {:kw (func {:oops})} (func
+				{:kw    (func
+				{:kw	true
+				 :other (func {:kw true})})}))
+
+
 # ----------------------
 order {
 	f some with {cardinality [10 20]},

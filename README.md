@@ -8,13 +8,15 @@ You can run some of the included samples using the lein shell script (from the [
 
 If we take a look at the file named "items.fab" in the samples folder, it contains the following;
 
-	id			/[A-Z]{2}\d{3}-\d{2}[a-z]/ 	# a value matching the specified regex
-	category	<Home Office Garden Construction Tools>	# a few possible choices
-	price		price [10 1000]		# a range of doubles, rounded as price
+	prototype item {
+		id			/[A-Z]{2}\d{3}-\d{2}[a-z]/ 	# a value matching the specified regex
+		category	<Home Office Garden Construction Tools>	# a few possible choices
+		price		price [10 1000]		# a range of doubles, rounded as price
 
-	# a column may include the value of other columns
-	blurb		format "Item %s is a nice %s product for only €%.2f" $id $category $price
-
+		# a column may include the value of other columns
+		blurb		format "Item %s is a nice %s product for only €%.2f" $id $category $price
+	}
+	
 You can then get Fabulate to generate items according to this specification. In the project directory run the command
 
 	lein run -i samples/items.fab csv

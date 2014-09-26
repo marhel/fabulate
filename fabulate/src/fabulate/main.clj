@@ -30,7 +30,8 @@
 (defn -main [& args]
   (let [opts (options-from-arguments args)
         code (slurp (:input opts))
-        fields (parsing/parse :fields code)
+        prototype (parsing/parse :prototype code)
+        fields (:fields ((first (keys prototype)) prototype))
         opts (if (:select opts) opts (assoc opts :select (map name (keys fields))))
         ]
     (binding [*out* *err*]

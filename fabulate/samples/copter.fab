@@ -1,17 +1,20 @@
-Color		<Red:3 Blue:3 Green:2 Pink Cyan Yellow Purple Black:4 White Mauve:0.2>
-NPrefix		</Sup(a|er)/ Hyper Über Over Tele Mega Ultra Giga Laser Vibra Speed Cloud Ninja Blade Drone Arm Lift Rise Heat Alien "UAV-" /Oct(a|o)/ Flying Gear Cam Electro Zen Rain Storm Field Cyber Toy Bull Lion Tiger Cheeta Manta Neo Zone Start Hobby Play "3D " Luxo /Lum[oa]/ Euro Robo Rocket Ocean Sky Prey Phantom /Helio?/ Jupiter Mars Venus Mercury Titan Giganto Turbo Sweep Maxi Micro Septa Hexa Thunder Rock Algo Dyna Nano Pro Sonic Team Sun Moon Proto RC- Radio Sweep Star Spider Fire Strike Bomb Boom Veloci Whirl /Spot(er)?/ Tri /Du(o|al)/ Penta Cool Air Aero Spy /Rot(o|a)/ Groove /[A-Z]{3}/>
-NSuffix		<vibe ring /(k|c)opter/ /thingy?/ gizmo /speedy?/ flame kite fire rage war slim lite fox falcon craft motor rover raptor saur owl muse /command(er)?/ eagle hawk vulture goose parrot raven gull tern lark sparrow finch eater catcher burner fisher hunter boxer swimmer duck scooter dove crane piper buzzard kestrel pecker cracker creeper harrier kite osprey swan mouse rodent rat shark rotor horizon bringer inator spinner wing ray eye cop man saw drill tool stone hammer steel titan warrior ghost swift /skye?/ phantom demon X /zoom(er)?/ /cross(er)?/ dragon wolf dog puppy zebra cat coyote kitten lion tiger cheeta /badger?/ bo zap zone /fl(y|ier)/ wasp bee /glider?/ /breezer?/ wind tornado hurricane cloud /birdy?/>
-Name		str $NPrefix $NSuffix
-ModelId		/[A-Z]{0,2}\d{1,3}([a-f]|\+)?/
-Suffix		<PRO Ultra Alu Gold Silver Bronze Rock Paper Scissor Steel Carbon Mercury Titanium /Mk(II|III|IV|V)/ /v[1-5]/ Ultra /(Special |FPV |RTF |Beginners |Methane |Turbo |Cinematic |Maxed |Jazzed |HD |Micro |(Jim|Joe|Will|John|Jack|Ralph|Linda|Jenny|Anne|Lynn|Veronica|Katy) (Smith|Jackson|Jones|Wolfe|Landon|Fox|Rabbit|Bear|Steele|Bond|Hutchkinson) |Lite |Heavy Duty |(Spider|Super|Bat|Iron|Sand|Wonder wo|Invisible wo|Aqua)man |)Edition/:5 Plus>
-Model       <(format "%s %s %s" $ModelId $Color $Suffix):0.5 (format "%s %s" $ModelId $Suffix):1 	(format "%s" $ModelId):4	>
-Rotors		int [3 8]
-Class		<Pro:10 Enthusiast:20 Beginner:40>
-Autopilot 	<Yes No "Probably Not">
-Weight		format "%dg" (int [250 800:40 1500])
-Power		format "%.1fW" [2 8]
-FlightTime 	int [10 45]
-Price		price [500:10 1000:2 1200:0.1 8500:0]	
-Battery		format "%.0fmAh, %.1fV" [3000 6000] [8 12]
-Dimensions	format "%.0fmm x %.0fmm x %.0fmm" [200 1000] [200 1000] [200 1000]
-Blurb		format "The %s %s costs only $%.2f" $Name $Model $Price
+prototype copter
+{
+	Color		<Red:3 Blue:3 Green:2 Pink Cyan Yellow Purple Black:4 White Mauve:0.2>
+	NPrefix		</Sup(a|er)/ Hyper Über Over Tele Mega Ultra Giga Laser Vibra Speed Cloud Ninja Blade Drone Arm Lift Rise Heat Alien "UAV-" /Oct(a|o)/ Flying Gear Cam Electro Zen Rain Storm Field Cyber Toy Bull Lion Tiger Cheeta Manta Neo Zone Start Hobby Play "3D " Luxo /Lum[oa]/ Euro Robo Rocket Ocean Sky Prey Phantom /Helio?/ Jupiter Mars Venus Mercury Titan Giganto Turbo Sweep Maxi Micro Septa Hexa Thunder Rock Algo Dyna Nano Pro Sonic Team Sun Moon Proto RC- Radio Sweep Star Spider Fire Strike Bomb Boom Veloci Whirl /Spot(er)?/ Tri /Du(o|al)/ Penta Cool Air Aero Spy /Rot(o|a)/ Groove /[A-Z]{3}/>
+	NSuffix		<vibe ring /(k|c)opter/ /thingy?/ gizmo /speedy?/ flame kite fire rage war slim lite fox falcon craft motor rover raptor saur owl muse /command(er)?/ eagle hawk vulture goose parrot raven gull tern lark sparrow finch eater catcher burner fisher hunter boxer swimmer duck scooter dove crane piper buzzard kestrel pecker cracker creeper harrier kite osprey swan mouse rodent rat shark rotor horizon bringer inator spinner wing ray eye cop man saw drill tool stone hammer steel titan warrior ghost swift /skye?/ phantom demon X /zoom(er)?/ /cross(er)?/ dragon wolf dog puppy zebra cat coyote kitten lion tiger cheeta /badger?/ bo zap zone /fl(y|ier)/ wasp bee /glider?/ /breezer?/ wind tornado hurricane cloud /birdy?/>
+	Name		str $NPrefix $NSuffix
+	ModelId		/[A-Z]{0,2}\d{1,3}([a-f]|\+)?/
+	Suffix		<PRO Ultra Alu Gold Silver Bronze Rock Paper Scissor Steel Carbon Mercury Titanium /Mk(II|III|IV|V)/ /v[1-5]/ Ultra /(Special |FPV |RTF |Beginners |Methane |Turbo |Cinematic |Maxed |Jazzed |HD |Micro |(Jim|Joe|Will|John|Jack|Ralph|Linda|Jenny|Anne|Lynn|Veronica|Katy) (Smith|Jackson|Jones|Wolfe|Landon|Fox|Rabbit|Bear|Steele|Bond|Hutchkinson) |Lite |Heavy Duty |(Spider|Super|Bat|Iron|Sand|Wonder wo|Invisible wo|Aqua)man |)Edition/:5 Plus>
+	Model       <(format "%s %s %s" $ModelId $Color $Suffix):0.5 (format "%s %s" $ModelId $Suffix):1 	(format "%s" $ModelId):4	>
+	Rotors		int [3 8]
+	Class		<Pro:10 Enthusiast:20 Beginner:40>
+	Autopilot 	<Yes No "Probably Not">
+	Weight		format "%dg" (int [250 800:40 1500])
+	Power		format "%.1fW" [2 8]
+	FlightTime 	int [10 45]
+	Price		price [500:10 1000:2 1200:0.1 8500:0]	
+	Battery		format "%.0fmAh, %.1fV" [3000 6000] [8 12]
+	Dimensions	format "%.0fmm x %.0fmm x %.0fmm" [200 1000] [200 1000] [200 1000]
+	Blurb		format "The %s %s costs only $%.2f" $Name $Model $Price
+}
