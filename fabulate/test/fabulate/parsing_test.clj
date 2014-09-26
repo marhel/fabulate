@@ -129,6 +129,16 @@
                                                         :name "quickly"
                                                         :params (param-contains {:type :range})})})}))
 
+
+(def dashboard-contents (contains {:speed (contains {:type :range})
+                                   :heading (contains {:type :range})
+                                   :info (contains {:type :function
+                                                    :name "format"
+                                                    :params (param-contains {:type :choice}
+                                                                            {:type :field
+                                                                             :field :speed}
+                                                                            {:type :field
+                                                                             :field :heading})})}))
 (facts "multiple fields"
        (parsing/parse :fields "speed [0 100]") => (contains {:speed (contains {:type :range})}) 
        (parsing/parse :fields 
@@ -146,14 +156,33 @@ info      format \"Speed %s km/h heading %s\" $speed $heading # with comment
 
    # these are just supporting fields, used for the calculation of the info-field
    speed     [0 100] # with comment
-   heading   [0 360]") => (contains {:speed (contains {:type :range})
-                 :heading (contains {:type :range})
-                 :info (contains {:type :function
-                                  :name "format"
-                                  :params (param-contains {:type :choice}
-                                                          {:type :field
-                                                           :field :speed}
-                                                          {:type :field
-                                                           :field :heading})})})
+   heading   [0 360]") => dashboard-contents
 )
+
+(facts "single prototype"
+       (parsing/parse :prototype "
+prototype dashboard {
+   info      format \"Speed %s km/h heading %s\" $speed $heading # with comment
+
+   # these are just supporting fields, used for the calculation of the info-field
+   speed     [0 100] # with comment
+   heading   [0 360]
+}") => (contains {:dashboard dashboard-contents}))
+
+(facts "mutiple prototypes"
+       (parsing/parse :prototypes "
+
+  prototype item
+  {
+    id  /[A-Z]\\d{3}/
+  }
+
+prototype dashboard {
+   info      format \"Speed %s km/h heading %s\" $speed $heading # with comment
+
+   # these are just supporting fields, used for the calculation of the info-field
+   speed     [0 100] # with comment
+   heading   [0 360]
+}") => (contains {:item (contains {:id (contains {:type :regex})})
+                  :dashboard dashboard-contents}))
 

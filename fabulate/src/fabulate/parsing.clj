@@ -6,7 +6,9 @@
   (:require [re-rand.parser.rules :as rr]))
 
 (def dsl-parser (insta/parser
-    "fields = (<newline> <noise>?)* field ((<newline> <noise>?)+ field)* <newline>?
+    "prototypes = (<newline> <noise>?)* prototype ((<newline> <noise>?)+ prototype)* <newline>?
+     prototype = (<newline> <noise>?)* <'prototype'> <noise>? symbol (<newline>? <noise>?)* <'{'> fields (<newline>? <noise>?)* <'}'>
+     fields = (<newline> <noise>?)* field ((<newline> <noise>?)+ field)* <newline>?
      field = <noise>? symbol <noise>? ( choice | function ) <noise>? 
      choice = simple-choice ( <':'> <noise>? number )?
      function = <noise>? symbol (<noise>? choice)*
@@ -97,7 +99,14 @@
 
 (defmethod simplify :fields [items pweight]
   (into {} (map simplify (rest items))))
- 
+
+(defmethod simplify :prototype [items pweight]
+  (let [[kw name fields] items]
+    {(keyword name) (simplify fields) :type kw :weight pweight }))
+
+(defmethod simplify :prototypes [items pweight]
+  (into {} (map simplify (rest items))))
+
 (defmethod simplify :function  [items pweight]
   (let [[kw name & items] items
         func (or (ns-resolve 'fabulate.dslfunctions (symbol name))
