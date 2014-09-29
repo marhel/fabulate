@@ -131,11 +131,13 @@ distance  [10 40]
 
 (facts
   "fun with many params picks different param for each"
-  (let [dsl "nums	format \"%s %s %s %s %s %s %s %s %s %s\" {1 2 3 4 5 6 7 8 9 10} {1 2 3 4 5 6 7 8 9 10} {1 2 3 4 5 6 7 8 9 10} {1 2 3 4 5 6 7 8 9 10} {1 2 3 4 5 6 7 8 9 10} {1 2 3 4 5 6 7 8 9 10} {1 2 3 4 5 6 7 8 9 10} {1 2 3 4 5 6 7 8 9 10} {1 2 3 4 5 6 7 8 9 10} {1 2 3 4 5 6 7 8 9 10}
+  (let [dsl "nums	format \"%s %s %s %s %s %s %s %s %s %s\" <1 2 3 4 5 6 7 8 9 10> <1 2 3 4 5 6 7 8 9 10> <1 2 3 4 5 6 7 8 9 10> <1 2 3 4 5 6 7 8 9 10> <1 2 3 4 5 6 7 8 9 10> <1 2 3 4 5 6 7 8 9 10> <1 2 3 4 5 6 7 8 9 10> <1 2 3 4 5 6 7 8 9 10> <1 2 3 4 5 6 7 8 9 10> <1 2 3 4 5 6 7 8 9 10>
 "
         fields (parsing/parse :fields dsl)]
     (binding [core/*rnd*  (core/make-rand-seq well-known-seed)]
       (let [ns (:nums (core/generate fields))]
         (count
-          (distinct (.split ns " ")))) =not=> 1             ; There's a one in a billion (10^9) risk that this test fails by coincident
-      )))
+          (distinct (.split ns " "))) =not=> (throws Exception)
+        (count
+          (distinct (.split ns " "))) =not=> 1                  ; because we use our well-known-seed, shouldn't be just a repetition
+        ))))
