@@ -110,6 +110,11 @@
   (let [field (f fields)]
     {f (choose field (first (*rnd* 1)))}))
 
+(declare generate)
+(defmethod choose :prototype [proto r]
+  (let [fields (:fields proto)]
+    (generate fields)))
+
 (defn flatten-tree [wt] (when (seq wt)
                           (conj
                             (concat (flatten-tree (:less wt))
@@ -129,6 +134,9 @@
 (defmethod depends-on :field [field] #{(:field field)})
 (defmethod depends-on :list [field] (dependencies (flatten-tree (:wtree field))))
 (defmethod depends-on :function [field] (dependencies (:params field)))
+; at this point, fields in a prototype may only depend on sibling fields defined in the same (possibly nested) protoype
+; references to parent or child fields are not permitted yet
+(defmethod depends-on :prototype [field] #{} #_(dependencies (vals (:fields field))))
 
 (defn fields-by-dep
   ([fields selection]

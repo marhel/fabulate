@@ -141,3 +141,39 @@ distance  [10 40]
         (count
           (distinct (.split ns " "))) =not=> 1                  ; because we use our well-known-seed, shouldn't be just a repetition
         ))))
+
+(facts
+  "can generate values for nested fields"
+  (let [dsl "
+mileage     [10 1000]
+dashboard {
+  speed     [0 100]
+  heading   [0 360]
+  distance  [10 40]
+}
+"
+        fields (parsing/parse :fields dsl)]
+    (binding [core/*rnd*  (core/make-rand-seq well-known-seed)]
+      (core/generate fields) => (contains {:mileage anything
+                                           :dashboard (contains {:speed anything
+                                                                 :heading anything
+                                                                 :distance anything})}))))
+
+(facts
+  "can generate values for nested fields with references to sibling fields"
+  (let [dsl "
+mileage     [10 1000]
+dashboard {
+  info      format \"Speed %.2f km/h heading %.2f\" $speed $heading
+  speed     [0 100]
+  heading   [0 360]
+  distance  [10 40]
+}
+"
+        fields (parsing/parse :fields dsl)]
+    (binding [core/*rnd*  (core/make-rand-seq well-known-seed)]
+      (core/generate fields) => (contains {:mileage anything
+                                           :dashboard (contains {:speed anything
+                                                                 :info anything
+                                                                 :heading anything
+                                                                 :distance anything})}))))
