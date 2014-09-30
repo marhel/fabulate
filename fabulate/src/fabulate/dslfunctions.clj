@@ -35,3 +35,9 @@
     (let [m (magnitude f)
           s (inc (min 3 m))]
       (round-sig f s))))
+
+; give legal names for these simple functions, as you aren't allowed to use a non-alfanumeric symbol name in the DSL at this point
+(def add +)
+(def subtract -)
+(def multiply *)
+(def divide /)
