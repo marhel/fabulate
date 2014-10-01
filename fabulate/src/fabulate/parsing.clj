@@ -52,7 +52,7 @@
 (defn simplify-range
   "Turns a complicated range (more than two items) into a list
   of simple ranges (two items) weighted by their area"
-  [items pweight]
+  [items pweight ctx]
   (let [area-of (fn [pair] (first (apply area pair)))
         to-range (fn [pair] {:type :range
                              :weight (area-of pair)
@@ -62,74 +62,81 @@
                  (partition 2 1)
                  (map to-range))
         wtree (weighted-tree ranges :weight)]
-    {:type :list :weight pweight :sum (:sum wtree)
-     :wtree wtree}))
+    {:type :list :weight pweight :sum (:sum wtree) :wtree wtree}))
+
+(defn with-ctx [ctx m]
+  (if (empty? ctx)
+    m
+    (assoc m :ctx ctx)))
 
 (defmulti simplify
   (fn
     ([items]) ; returns nil, and will end up at the :default handler
-    ([items pweight]
-     ;(prn (:type arr) r)
+    ([items pweight ctx]
      (first items))))
 
-(defmethod simplify :choice [items pweight]
+(defmethod simplify :choice [items pweight ctx]
   (let [[kw weight choice] items]
-    (if (vector? choice)
-      (simplify choice weight)
-      {:type kw :weight weight :item choice})))
+    (with-ctx ctx
+              (if (vector? choice)
+                (simplify choice weight ctx)
+                {:type kw :weight weight :item choice}))))
 
-(defmethod simplify :list [items pweight]
+(defmethod simplify :list [items pweight ctx]
   (let [items (rest items)
         wtree (weighted-tree (map simplify items) :weight)]
-    {:type :list :weight pweight :sum (:sum wtree)
-     :wtree wtree}))
+    (with-ctx ctx {:type  :list :weight pweight :sum (:sum wtree)
+                   :wtree wtree})))
 
-(defmethod simplify :range [items pweight]
+(defmethod simplify :range [items pweight ctx]
   (let [items (rest items)]
-    (if (>= 2 (count items))
-      {:type :range :weight pweight :items (map simplify items)}
-      (simplify-range items pweight))))
+    (with-ctx ctx (if (>= 2 (count items))
+                    {:type :range :weight pweight :items (map simplify items)}
+                    (simplify-range items pweight ctx)))))
 
-(defmethod simplify :field [items pweight]
-  (let [[kw name choice] items]
-    {(keyword name) (simplify choice pweight)}))
+(defmethod simplify :field [items pweight ctx]
+  (let [[kw name choice] items
+        namekw (keyword name)
+        newctx (conj ctx namekw)]
+    {(keyword name) (simplify choice pweight newctx)}))
 
-(defmethod simplify :fieldref [items pweight]
+(defmethod simplify :fieldref [items pweight ctx]
   (let [[kw name] items]
-    {:type :field :weight pweight :field (keyword name)}))
+    (with-ctx ctx {:type :field :weight pweight :field (keyword name)})))
 
-(defmethod simplify :fields [items pweight]
-  (into {} (map simplify (rest items))))
+(defmethod simplify :fields [items pweight ctx]
+  (into {} (map #(simplify % pweight ctx) (rest items))))
 
-(defmethod simplify :prototype [items pweight]
-  (let [[kw name fieldblock] items]
-    {(keyword name) (simplify fieldblock) :type kw :weight pweight }))
+(defmethod simplify :prototype [items pweight ctx]
+  (let [[kw name fieldblock] items
+        namekw (keyword name)]
+    (with-ctx ctx {namekw (simplify fieldblock 1 ctx) :type kw :weight pweight})))
 
-(defmethod simplify :fieldblock [items pweight]
+(defmethod simplify :fieldblock [items pweight ctx]
   (let [[kw fields] items]
-    {:type :prototype :weight pweight :fields (simplify fields)}))
+    (with-ctx ctx {:type :prototype :weight pweight :fields (simplify fields pweight ctx)})))
 
-(defmethod simplify :prototypes [items pweight]
+(defmethod simplify :prototypes [items pweight ctx]
   (into {} (map simplify (rest items))))
 
-(defmethod simplify :function  [items pweight]
+(defmethod simplify :function  [items pweight ctx]
   (let [[kw name & items] items
         func (or (ns-resolve 'fabulate.dslfunctions (symbol name))
                  (ns-resolve 'clojure.core (symbol name)))]
-    {:type :function :weight pweight :name name :fn func :params (map simplify items)}))
+    (with-ctx ctx {:type :function :weight pweight :name name :fn func :params (map simplify items)})))
 
-(defmethod simplify :regex [items pweight]
+(defmethod simplify :regex [items pweight ctx]
   (let [[kw pattern] items]
-    {:type :regex :weight pweight :generator (first (rr/pattern (str pattern))) :pattern pattern}))
+    (with-ctx ctx {:type :regex :weight pweight :generator (first (rr/pattern (str pattern))) :pattern pattern})))
 
 (defmethod simplify :default
-  ([items] (simplify items 1))
-  ([items pweight]
-    (throw (IllegalArgumentException. (format "simplification of key %s unknown" (first items))))))
+  ([items] (simplify items 1 []))
+  ([items pweight ctx]
+   (throw (IllegalArgumentException. (format "simplification of key %s unknown" (first items))))))
 
 (defn parse
   ([start-rule dsl]
     (let [tree (dsl-parser dsl :start start-rule)]
       (if (insta/failure? tree)
         (insta/get-failure tree)
-        (simplify (insta/transform transforms tree) 1)))))
+        (simplify (insta/transform transforms tree) 1 [])))))

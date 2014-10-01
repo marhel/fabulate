@@ -110,7 +110,7 @@
        )
 
 (facts "simplification"
-       (parsing/simplify {:type :whatever} 2) => (throws IllegalArgumentException #"whatever.*unknown"))
+       (parsing/simplify {:type :whatever} 2 []) => (throws IllegalArgumentException #"whatever.*unknown"))
 
 (facts "single field"
        (parsing/parse :field "speed     [0 100]") => (contains {:speed (contains {:type :range})}) 
@@ -188,7 +188,7 @@ prototype dashboard {
    heading   [0 360]
  }
  ") => (contains {:item      (contains {:type :prototype
-                                        :fields (contains {:id (contains {:type :regex})})})
+                                        :fields (contains {:id (contains {:type :regex :ctx [:id]})})})
                   :dashboard dashboard-contents}))
 
 (facts "nested prototype"
@@ -225,8 +225,8 @@ prototype dashboard {
       }
       outertrailer <yes no>
   }") => (contains {:outer (contains {:type :prototype
-                                      :fields (contains {:outertrailer (contains {:type :list})
+                                      :fields (contains {:outertrailer (contains {:type :list :ctx [:outertrailer]})
                                                          :middle (contains {:type :prototype
                                                                             :fields (contains {:item (contains {:type :prototype
-                                                                                                                :fields (contains {:id  (contains {:type :regex})
+                                                                                                                :fields (contains {:id  (contains {:type :regex :ctx [:middle :item :id]})
                                                                                                                                    :dashboard dashboard-contents})})})})})})}))
