@@ -135,9 +135,9 @@
                             :info    (contains {:type   :function
                                                 :name   "format"
                                                 :params (param-contains {:type :choice}
-                                                                        {:type  :field
+                                                                        {:type  :fieldref
                                                                          :field :speed}
-                                                                        {:type  :field
+                                                                        {:type  :fieldref
                                                                          :field :heading})})}))
 (def dashboard-contents (contains {:type :prototype
                                    :fields dash-fields}))

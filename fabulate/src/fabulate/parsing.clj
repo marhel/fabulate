@@ -102,7 +102,7 @@
 
 (defmethod simplify :fieldref [items pweight ctx]
   (let [[kw name] items]
-    (with-ctx ctx {:type :field :weight pweight :field (keyword name)})))
+    (with-ctx ctx {:type :fieldref :weight pweight :field (keyword name)})))
 
 (defmethod simplify :fields [items pweight ctx]
   (into {} (map #(simplify % pweight ctx) (rest items))))

@@ -95,7 +95,7 @@
 (def ^:dynamic *row* {})
 
 ; cross-reference to the value of another field in the same row
-(defmethod choose :field [tree r]  
+(defmethod choose :fieldref [tree r]
   (let [f (:field tree)]
     (f *row*)))
 
@@ -131,7 +131,7 @@
 (defmethod depends-on :choice [field] #{})
 (defmethod depends-on :range [field] #{})
 (defmethod depends-on :regex [field] #{})
-(defmethod depends-on :field [field] #{(:field field)})
+(defmethod depends-on :fieldref [field] #{(:field field)})
 (defmethod depends-on :list [field] (dependencies (flatten-tree (:wtree field))))
 (defmethod depends-on :function [field] (dependencies (:params field)))
 ; at this point, fields in a prototype may only depend on sibling fields defined in the same (possibly nested) protoype
