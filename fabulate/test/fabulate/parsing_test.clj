@@ -136,9 +136,11 @@
                                                 :name   "format"
                                                 :params (param-contains {:type :choice}
                                                                         {:type  :fieldref
-                                                                         :field :speed}
+                                                                         :name "speed"
+                                                                         :xref (contains :speed)}
                                                                         {:type  :fieldref
-                                                                         :field :heading})})}))
+                                                                         :name "heading"
+                                                                         :xref (contains :heading)})})}))
 (def dashboard-contents (contains {:type :prototype
                                    :fields dash-fields}))
 

@@ -64,8 +64,12 @@
     (fn [actual] (not (nil? (re-matches pattern actual)))))
 
 (facts "depends-on"
-       (core/depends-on (:zero (parsing/parse :field "zero <$one two $three>"))) => (just #{:one :three})
-       (core/depends-on (:zero (parsing/parse :field "zero /123/"))) => (just #{}))
+       (let [dsl (parsing/parse :fields "one 1
+       three 3
+       zero <$one two $three>")]
+         (core/depends-on (:zero dsl) dsl)) => (just #{[:one] [:three]})
+       (let [dsl (parsing/parse :field "zero /123/")]
+         (core/depends-on (:zero dsl) dsl)) => (just #{}))
 
 (facts "choose"
        (core/choose (parsing/parse :choice "[0 100]") 0.5) => (roughly 50)
@@ -107,11 +111,11 @@ distance  [10 40]
 extended  format \"%s Distance %.2f\" $info $distance
 "
         fields (parsing/parse :fields dsl)]
-    (core/fields-by-dep fields) => (just [:heading :distance :speed :info :extended])
-    (core/fields-by-dep fields [:info]) => (just [:heading :speed :info]) ; includes dependencies of the specified subset as well
-    (core/fields-by-dep fields [:extended]) => (just [:heading :distance :speed :info :extended]) ; includes dependencies recursively
-    (core/fields-by-dep fields [:info :heading :speed]) => (just [:heading :speed :info])
-    (core/fields-by-dep fields [:speed]) => (just [:speed])))
+    (core/fields-by-dep fields) => (just [[:speed] [:heading] [:info] [:distance] [:extended]])
+    (core/fields-by-dep fields (map core/name-to-ctx ["info"])) => (just [[:speed] [:heading] [:info]]) ; includes dependencies of the specified subset as well
+    (core/fields-by-dep fields (map core/name-to-ctx ["extended"])) => (just [[:speed] [:heading] [:info] [:distance] [:extended]]) ; includes dependencies recursively
+    (core/fields-by-dep fields (map core/name-to-ctx ["info" "heading" "speed"])) => (just [[:speed] [:heading] [:info]])
+    (core/fields-by-dep fields (map core/name-to-ctx ["speed"])) => (just [[:speed]])))
 
 (facts
   "generate row generates only requested fields"
@@ -122,11 +126,11 @@ distance  [10 40]
 "
         fields (parsing/parse :fields dsl)]
     (binding [core/*rnd*  (core/make-rand-seq well-known-seed)]
-      (core/generate fields) => {:distance 39.71243119389451 :speed 25.225544079393046, :heading 148.75892158666196, :info "Speed 25,23 km/h heading 148,76"}
-      (core/generate fields) => {:distance 26.081935237588418 :speed 41.019319216746965 :heading 26.437831286402286 :info "Speed 41,02 km/h heading 26,44"}
-      (core/generate fields [:speed]) => {:speed 89.67743965315603}
-      (core/generate fields [:info]) => {:info "Speed nu km/h heading nu"} ; generate won't automatically include dependent fields (which resolves to nil (or "nu"(ll) in the string formatting)
-      (core/generate fields [:heading :speed :info]) => {:heading 160.07859470155734, :info "Speed 11,22 km/h heading 160,08", :speed 11.219855161526382}
+      (core/generate fields) => {:distance 31.169908779757634, :heading 356.5491743267341, :info "Speed 41,32 km/h heading 356,55", :speed 41.321922662961654}
+      (core/generate fields) => {:distance 25.694580966916472, :heading 192.98322285106102, :info "Speed 7,34 km/h heading 192,98", :speed 7.343842024000635}
+      (core/generate fields [[:speed]]) => {:speed 89.67743965315603}
+      (core/generate fields [[:info]]) => {:info "Speed nu km/h heading nu"} ; generate won't automatically include dependent fields (which resolves to nil (or "nu"(ll) in the string formatting)
+      (core/generate fields [[:heading] [:speed] [:info]]) => {:heading 160.07859470155734, :info "Speed 11,22 km/h heading 160,08", :speed 11.219855161526382}
       )))
 
 (facts
@@ -159,10 +163,50 @@ dashboard {
                                                                  :heading anything
                                                                  :distance anything})}))))
 
+(let [dsl "
+mileage     [10 1000]
+dashboard {
+  info      format \"Speed %.2f km/h heading %.2f\" $speed $heading
+  speed     [0 100]
+  heading   [0 360]
+  distance  [10 40]
+}
+"
+      fields (parsing/parse :fields dsl)]
+  (facts "can get field contexts"
+         (core/field-ctxs fields) => (contains [[:mileage] [:dashboard :info] [:dashboard :heading] [:dashboard :speed] [:dashboard :distance]] :in-any-order))
+
+  (facts
+    "can generate values for nested fields with references to sibling fields"
+    (binding [core/*rnd*  (core/make-rand-seq well-known-seed)]
+      (core/generate fields) => (contains {:mileage anything
+                                           :dashboard (contains {:speed anything
+                                                                 :info anything
+                                                                 :heading anything
+                                                                 :distance anything})}))))
 (facts
-  "can generate values for nested fields with references to sibling fields"
+  "can generate values for nested fields with references to parent fields"
   (let [dsl "
 mileage     [10 1000]
+dashboard {
+  info      format \"Speed %.2f km/h heading %.2f\" $speed $heading
+  speed     [0 100]
+  heading   [0 360]
+  distance  add $mileage [10 40]
+}
+"
+        fields (parsing/parse :fields dsl)]
+    (binding [core/*rnd*  (core/make-rand-seq well-known-seed)]
+      (core/generate fields) => (contains {:mileage anything
+                                           :dashboard (contains {:speed anything
+                                                                 :info anything
+                                                                 :heading anything
+                                                                 :distance anything})}))))
+
+(facts
+  "can generate values for nested fields with unqualified references to child fields"
+  (let [dsl "
+mileage     add $distance [10 1000]
 dashboard {
   info      format \"Speed %.2f km/h heading %.2f\" $speed $heading
   speed     [0 100]
@@ -173,6 +217,25 @@ dashboard {
         fields (parsing/parse :fields dsl)]
     (binding [core/*rnd*  (core/make-rand-seq well-known-seed)]
       (core/generate fields) => (contains {:mileage anything
+                                           :dashboard (contains {:speed anything
+                                                                 :info anything
+                                                                 :heading anything
+                                                                 :distance anything})}))))
+
+(facts
+  "can generate values for nested fields with qualified references to child fields"
+  (let [dsl "
+mileage     add $dashboard.distance [10 1000]
+dashboard {
+  info      format \"Speed %.2f km/h heading %.2f\" $speed $heading
+  speed     [0 100]
+  heading   [0 360]
+  distance  [10 40]
+}
+"
+        fields (parsing/parse :fields dsl)]
+    (binding [core/*rnd*  (core/make-rand-seq well-known-seed)]
+      (core/generate fields) => (contains {:mileage 2
                                            :dashboard (contains {:speed anything
                                                                  :info anything
                                                                  :heading anything

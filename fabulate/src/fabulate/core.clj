@@ -63,57 +63,66 @@
 
 (def ^:dynamic *rnd* (make-rand-seq (System/currentTimeMillis)))
 
-(defmulti choose (fn [tree r]
-                   ;(prn (:type tree) r)
-                   (:type tree)))
+(defmulti choose (fn [field r]
+                   ;(prn (:type field) r)
+                   (:type field)))
 
-(defmethod choose :choice [tree r]
-   (:item tree))
+(defmethod choose :choice [field r]
+   (:item field))
 
-(defmethod choose :list [tree r]
-  (let [R (* r (:sum tree))
-        [item hit] (lookup (:wtree tree) R)
+(defmethod choose :list [field r]
+  (let [R (* r (:sum field))
+        [item hit] (lookup (:wtree field) R)
         ; _ (prn item hit)
         ]
     (choose item hit)))
 
-(defmethod choose :range [tree r]
-  (range-lookup tree r))
+(defmethod choose :range [field r]
+  (range-lookup field r))
 
 ; A function will need to consume as many random numbers as it has parameters, 
 ; as it will call choose on each argument, however, it makes a private rand-seq for this purpose.
 ; This allows me to keep the old interface with a single random float.
 ; In order to try to keep the repeatability for randomness, it uses the random it got
 ; as a seed for the new rand-seq.
-(defmethod choose :function [tree r]
-  (let [params (:params tree)
+(defmethod choose :function [field r]
+  (let [params (:params field)
         param-rand (make-rand-seq (* Long/MAX_VALUE r))
         vals (map choose params (param-rand 1))]
-    ; (println "calling" (:fn tree) vals)
-    (apply (:fn tree) vals)))
+    ; (println "calling" (:fn field) vals)
+    (apply (:fn field) vals)))
 
 (def ^:dynamic *row* {})
 
-; cross-reference to the value of another field in the same row
-(defmethod choose :fieldref [tree r]
-  (let [f (:field tree)]
-    (f *row*)))
+(declare name-to-ctx)
+(defn field-to-xref [field]
+  (let [ctx (:xref field)]
+    (if (nil? ctx)
+      (throw (IllegalArgumentException. (format "field reference '%s' hasn't been fully resolved (no :xref)" (:name field))))
+      ctx)))
 
-(defmethod choose :regex [tree r]  
-  (let [generator (:generator tree)
+; cross-reference to the value of another field in the same row
+(defmethod choose :fieldref [field r]
+  (let [ctx (field-to-xref field)]
+    (get-in *row* ctx)))
+
+(defmethod choose :regex [field r]
+  (let [generator (:generator field)
         result (generator)
         extractor (if (vector? result) first identity)]
     (extractor result)))
 
+(defn field-from-ctx [fields ctx]
+  (get-in fields (interpose :fields ctx)))
+
 (defn resolve-field
-  [f fields]
-  (let [field (f fields)]
-    {f (choose field (first (*rnd* 1)))}))
+  [fields ctx]
+  (let [field (field-from-ctx fields ctx)]
+    (choose field (first (*rnd* 1)))))
 
 (declare generate)
 (defmethod choose :prototype [proto r]
-  (let [fields (:fields proto)]
-    (generate fields)))
+  :nothing)
 
 (defn flatten-tree [wt] (when (seq wt)
                           (conj
@@ -121,43 +130,70 @@
                                     (flatten-tree (:more wt)))
                             (:item wt))))
 
-(defmulti depends-on :type)
+(defn same-prefix [px l2]
+  (if (or (empty? px) (empty? l2))
+    (empty? px)
+    (and (= (first px) (first l2)) (recur (rest px) (rest l2)))))
+(declare field-ctx)
+(defn field-ctxs [fields]
+  (mapcat field-ctx fields))
+(defn- field-ctx [[f def]]
+  (if (= :prototype (:type def))
+    (field-ctxs (:fields def))
+    [(:ctx def)]
+    ))
+(defn ctx-to-name [ctx]
+  (clojure.string/join "." (map name ctx)))
+(defn name-to-ctx [fname]
+  (vec (map keyword (clojure.string/split fname #"\."))))
+(defn lookup-field [fname fields]
+  (let [path (reverse (name-to-ctx fname))
+        cxr (map reverse (field-ctxs fields))
+        [first & rest :as all] (map (comp vec reverse) (filter #(same-prefix path %) cxr))]
+    (cond (empty? first) (throw (IllegalArgumentException. (format "field reference '%s' matches no known field" fname)))
+          (empty? rest)  first
+          :else          (throw (IllegalArgumentException. (format "field reference '%s' matches more than one field; '%s'" fname (clojure.string/join "', '" (map ctx-to-name all))))))))
 
-(defn dependencies [l]
-		(->> l
-    (map depends-on)
-    (apply clojure.set/union))) 
+(defmulti depends-on (fn [field fields] (:type field)))
 
-(defmethod depends-on :choice [field] #{})
-(defmethod depends-on :range [field] #{})
-(defmethod depends-on :regex [field] #{})
-(defmethod depends-on :fieldref [field] #{(:field field)})
-(defmethod depends-on :list [field] (dependencies (flatten-tree (:wtree field))))
-(defmethod depends-on :function [field] (dependencies (:params field)))
+(defn dependencies [l fields]
+  (->> l
+       (map #(depends-on % fields))
+       (apply clojure.set/union)))
+
+(defmethod depends-on :default [field fields] #{})
+(defmethod depends-on :fieldref [field fields] #{(field-to-xref field)})
+(defmethod depends-on :list [field fields] (dependencies (flatten-tree (:wtree field)) fields))
+(defmethod depends-on :function [field fields] (dependencies (:params field) fields))
 ; at this point, fields in a prototype may only depend on sibling fields defined in the same (possibly nested) protoype
 ; references to parent or child fields are not permitted yet
-(defmethod depends-on :prototype [field] #{} #_(dependencies (vals (:fields field))))
+;(defmethod depends-on :prototype [field] #{} #_(dependencies (vals (:fields field))))
 
 (defn fields-by-dep
   ([fields selection]
-   (let [fs
-         (->> (filter (set selection) (keys fields))
-              (map (fn [kw] {kw (depends-on (kw fields))}))
-              (into {})
-              (kahn/kahn-sort)
-              (reverse))
-         new-deps? (= (set fs) (set selection))]
-     (if new-deps?
-       fs
-       (fields-by-dep fields fs))))
+   (let [selected? (set selection)
+         dependency (fn [ctx] {ctx (depends-on (field-from-ctx fields ctx) fields)})
+         ctxs (->> (filter selected? (field-ctxs fields))
+                   (map dependency)
+                   (into {})
+                   (kahn/kahn-sort)
+                   (reverse))
+         no-new-deps? (= (set ctxs) selected?)]
+     (if no-new-deps?
+       ctxs
+       ; ensure that the dependencies of any new dependencies are also included
+       (recur fields ctxs))))
   ([fields]
-   (fields-by-dep fields (keys fields))))
+   (fields-by-dep fields (field-ctxs fields))))
 
 (defn generate
   ([fields]
-    (generate fields (fields-by-dep fields)))
-  ([fields fields-in-dep-order]
-    (reduce (fn [row f] (into row (binding [*row* row] (resolve-field f fields)))) {} fields-in-dep-order)))
+   (generate fields (fields-by-dep fields)))
+  ([fields ctxs-in-dep-order]
+   (reduce (fn [row ctx]
+             (binding [*row* row]
+               (assoc-in row ctx (resolve-field fields ctx)))) {} ctxs-in-dep-order)))
+
 
 (defmulti write-to (fn [opts fields]
                      (:writer opts)))
@@ -166,4 +202,3 @@
 (defmulti parse-subcommand subcommand)
 
 (defmethod parse-subcommand :default [argv] {})
-

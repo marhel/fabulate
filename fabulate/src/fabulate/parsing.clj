@@ -102,7 +102,7 @@
 
 (defmethod simplify :fieldref [items pweight ctx]
   (let [[kw name] items]
-    (with-ctx ctx {:type :fieldref :weight pweight :field (keyword name)})))
+    (with-ctx ctx {:type :fieldref :weight pweight :name name})))
 
 (defmethod simplify :fields [items pweight ctx]
   (into {} (map #(simplify % pweight ctx) (rest items))))
@@ -134,9 +134,21 @@
   ([items pweight ctx]
    (throw (IllegalArgumentException. (format "simplification of key %s unknown" (first items))))))
 
+(defn- update-xref [fields]
+  (fn [field]
+    (if (= :fieldref (:type field))
+      (assoc field :xref (lookup-field (:name field) fields))
+      field)))
+
+(defn resolve-xrefs [fields]
+  (clojure.walk/prewalk (update-xref fields) fields))
+
+
 (defn parse
   ([start-rule dsl]
     (let [tree (dsl-parser dsl :start start-rule)]
       (if (insta/failure? tree)
         (insta/get-failure tree)
-        (simplify (insta/transform transforms tree) 1 [])))))
+        (-> (insta/transform transforms tree)
+            (simplify 1 [])
+            (resolve-xrefs))))))
