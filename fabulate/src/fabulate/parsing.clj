@@ -1,6 +1,7 @@
 (ns fabulate.parsing
   (:use fabulate.core)
   (:use fabulate.range)
+  (:require [clojure.walk])
   (:require [fabulate.dslfunctions :as dsl])
   (:require [instaparse.core :as insta])
   (:require [re-rand.parser.rules :as rr]))

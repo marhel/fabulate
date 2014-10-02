@@ -146,6 +146,9 @@
   (clojure.string/join "." (map name ctx)))
 (defn name-to-ctx [fname]
   (vec (map keyword (clojure.string/split fname #"\."))))
+(defn copy-by-ctx [m ctxs]
+  (reduce (fn [row ctx] (assoc-in row ctx (get-in m ctx)))
+          {} (reverse ctxs)))                               ; reverse seems to help get the fields output in the proper order when mapping over the generated hashmap
 (defn lookup-field [fname fields]
   (let [path (reverse (name-to-ctx fname))
         cxr (map reverse (field-ctxs fields))
@@ -165,9 +168,6 @@
 (defmethod depends-on :fieldref [field fields] #{(field-to-xref field)})
 (defmethod depends-on :list [field fields] (dependencies (flatten-tree (:wtree field)) fields))
 (defmethod depends-on :function [field fields] (dependencies (:params field) fields))
-; at this point, fields in a prototype may only depend on sibling fields defined in the same (possibly nested) protoype
-; references to parent or child fields are not permitted yet
-;(defmethod depends-on :prototype [field] #{} #_(dependencies (vals (:fields field))))
 
 (defn fields-by-dep
   ([fields selection]

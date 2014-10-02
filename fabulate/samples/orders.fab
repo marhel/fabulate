@@ -1,0 +1,13 @@
+prototype salesorder
+{
+	id		int [1000000 9999999]
+	date	age [0 3]
+	status	<initial open closed>
+	line 	{
+		orderid	$id
+		itemid	/[A-Z][0-9]{5,6}/
+		qty		int [1 100]
+		price 	price [1 500]
+		total	price (multiply $qty $price)
+	}
+}

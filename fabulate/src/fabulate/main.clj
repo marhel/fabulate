@@ -33,7 +33,7 @@
         code (slurp (:input opts))
         prototype (parsing/parse :prototype code)
         fields (:fields ((first (keys prototype)) prototype))
-        opts (if (:select opts) opts (assoc opts :select (map name (keys fields))))
+        opts (if (:select opts) opts (assoc opts :select (map ctx-to-name (field-ctxs fields))))
         ]
     (binding [*out* *err*]
       (println "Fabulate 0.1α - Martin Hellspong"))

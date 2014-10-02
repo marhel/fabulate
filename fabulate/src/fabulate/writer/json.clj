@@ -11,12 +11,13 @@
 
 (defmethod write-to :json [opts fields]
   (let [headers   (:select opts)
-        selection (map keyword headers)
+        selection (map #(lookup-field % fields) headers)
         file-name (:destination opts)
         num-recs  (:count opts)
         subset-by-dep (fields-by-dep fields selection)
         stream-of (fn further [fields]
-                    (cons (select-keys (generate fields subset-by-dep) selection) (lazy-seq (further fields))))
+                    (cons (copy-by-ctx (generate fields subset-by-dep) selection)
+                          (lazy-seq (further fields))))
         stream-n  (take num-recs (stream-of fields))
         write     #(json/pprint stream-n)]
     (if file-name

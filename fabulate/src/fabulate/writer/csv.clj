@@ -11,14 +11,15 @@
 
 (defmethod write-to :csv [opts fields]
   (let [headers   (:select opts)
-        selection (map keyword headers)
+        selection (map #(lookup-field % fields) headers)
         file-name (:destination opts)
         num-recs  (:count opts)
-        to-values (apply clojure.core/juxt selection)
         subset-by-dep (fields-by-dep fields selection)
         separator (or (:separator opts) \,)
         stream-of (fn further [fields]
-                    (cons (to-values (generate fields subset-by-dep)) (lazy-seq (further fields))))
+                    (cons (let [generated (generate fields subset-by-dep)]
+                            (map #(get-in generated %) selection))
+                          (lazy-seq (further fields))))
         stream-with-headers (lazy-cat [headers] (take num-recs (stream-of fields)))
         write     #(csv/write-csv % stream-with-headers :separator separator)]
     (if file-name
