@@ -235,7 +235,7 @@ dashboard {
 "
         fields (parsing/parse :fields dsl)]
     (binding [core/*rnd*  (core/make-rand-seq well-known-seed)]
-      (core/generate fields) => (contains {:mileage 2
+      (core/generate fields) => (contains {:mileage anything
                                            :dashboard (contains {:speed anything
                                                                  :info anything
                                                                  :heading anything
