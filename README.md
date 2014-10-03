@@ -91,7 +91,39 @@ In Fabulate, regexes are not used to match text, instead they are used to genera
 	/[A-Z]\d{3}/	# generates values like A637, H762, T013
 	/[A-F0-9]{8}(-[A-F0-9]{4}){3}-[A-F0-9]{12}/	# generates a GUID-like value
 
+### Prototypes
+
+A prototype is much like a table definition; a specification of a collection of related fields. You are allowed to specify multiple prototypes in a single .fab-file, but data will only be generated for the first prototype at this time.
+
+### Nested prototypes
+
+Fabulate also supports nested prototypes, such as in this example prototype named aParent, containing two child prototypes. 
+
+    prototype aParent
+    { 
+        num             [0 10]
+        sum             add $childA.val $childB.val
+        working			or $done $started
+        childA  {
+                val     [0 10]
+                done    bool
+        }
+        childB  {
+                val     [0 10]
+                started bool
+        }
+    } 
+
+The nesting may continue to arbitrary depths. Note however that, currently, only a single instance of any nested prototype can be generated. Adding array support for single fields, as well as for nested prototypes is a top development priority. 
+
+### Field cross-references
+
+Field cross-references are symbols with a leading dollar sign, possibly with a multi part dot-separated name. A field xref can reference by name any field in the current prototype, as long as no reference cycles are created. 
+
+A reference can be done to sibling fields, from a parent prototype to a child field, or from a nested prototype to a parent field. In the above "aParent"-prototype, a reference to val needs to be qualified with the containing prototype, such as $childA.val or $childB.val, or the reference will be ambiguous, but $done and started are adequate references regardless of from where the reference is made (from childA, childB or the parent), as they uniquely identifies a single field.
+
 ## Command Line Reference
+
 Basic syntax is;
 
 	lein run <generic-params> <writer> <writer-params>
@@ -105,6 +137,7 @@ There are a few generic parameters valid for all writers
 	-n 		--count ROWS	Number of rows to generate
 	-i 		--input FILE 	Input file with fab column specifications
 	-s 		--select FIELDS Comma separated list of field to include in the output (default: all)
+	-d 		--destination FILE 	Destination file (defaults to outputting data to the console)
 
 And each writer has it own set of parameters. At this point *csv* and *json* are the only available writers.
 
@@ -125,7 +158,6 @@ The CSV writer formats data according to the the [RFC4180](http://tools.ietf.org
 
 The csv writer has the following additional parameters, that need to go after the name of the writer.
 
-	-d 		--destination FILE 	Destination file (defaults to outputting data to the console)
 	-s 		--separator CHAR	Field separator to use
 
 If you cannot get the field separator to work as you expect, please be warned that some characters are treated differently by your shell such as semicolon, question mark, asterisk or backslash and may need to be escaped or quoted in order to become a valid parameter value, depending on your specific shell.
