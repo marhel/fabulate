@@ -4,24 +4,6 @@
   (:require [clojure.data.json :as json])
   (:require [clojure.tools.cli :as cli]))
 
-(defmethod parse-subcommand :json [argv]
-  (let [options  [["-d" "--destination FILE" "Destination file"]
-                  ]]
-    (cli/parse-opts (rest argv) options)))
-
-(defmethod write-to :json [opts fields]
-  (let [headers   (:select opts)
-        selection (map #(lookup-field % fields) headers)
-        file-name (:destination opts)
-        num-recs  (:count opts)
-        subset-by-dep (fields-by-dep fields selection)
-        stream-of (fn further [fields]
-                    (cons (copy-by-ctx (generate fields subset-by-dep) selection)
-                          (lazy-seq (further fields))))
-        stream-n  (take num-recs (stream-of fields))
-        write     #(json/pprint stream-n)]
-    (if file-name
-      (with-open [out-file (io/writer file-name)]
-        (binding [*out* out-file]
-          (write)))
-      (write))))
+(defmethod write-to :json [writer opts fields stream-n]
+  (binding [*out* writer]
+    (json/pprint stream-n)))

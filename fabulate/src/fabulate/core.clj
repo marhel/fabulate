@@ -1,7 +1,8 @@
 (ns fabulate.core
   (:import (java.util Random))
   (:use fabulate.range)
-  (:require [fabulate.kahn :as kahn]))
+  (:require [fabulate.kahn :as kahn]
+            [clojure.java.io :as io]))
 
 (set! *warn-on-reflection* true)
 
@@ -195,8 +196,24 @@
                (assoc-in row ctx (resolve-field fields ctx)))) {} ctxs-in-dep-order)))
 
 
-(defmulti write-to (fn [opts fields]
+(defmulti write-to (fn [writer opts fields stream-n]
                      (:writer opts)))
+
+(defn write-fields [opts fields]
+  (let [headers   (:select opts)
+        selection (map #(lookup-field % fields) headers)
+        opts      (assoc opts :selected-ctxs selection)
+        file-name (:destination opts)
+        num-recs  (:count opts)
+        subset-by-dep (fields-by-dep fields selection)
+        stream-of (fn further [fields]
+                    (cons (copy-by-ctx (generate fields subset-by-dep) selection)
+                          (lazy-seq (further fields))))
+        stream-n  (take num-recs (stream-of fields))]
+    (if file-name
+      (with-open [writer (io/writer file-name)]
+        (write-to writer opts fields stream-n))
+      (write-to *out* opts fields stream-n))))
 
 (defn subcommand [argv] (keyword (first argv)))
 (defmulti parse-subcommand subcommand)

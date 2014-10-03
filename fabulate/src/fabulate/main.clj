@@ -14,6 +14,7 @@
      :parse-fn #(Integer/parseInt %)
      :validate [#(< 0 % 1000000) "Must be a number between 0 and 1000000"]]
     ["-i" "--input FILE" "Input fabfile"]
+    ["-d" "--destination FILE" "Destination file"]
     ["-s" "--select fields" "Comma separated list of fields to include in the output"
      :default-desc "All fields"
      :parse-fn #(vec (map (fn [s] (.trim s)) (.split % ",")))]
@@ -37,4 +38,4 @@
         ]
     (binding [*out* *err*]
       (println "Fabulate 0.1α - Martin Hellspong"))
-    (write-to opts fields)))
+    (write-fields opts fields)))
