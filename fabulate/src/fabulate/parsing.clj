@@ -3,36 +3,38 @@
   (:use fabulate.range)
   (:require [clojure.walk])
   (:require [fabulate.dslfunctions :as dsl])
+  (:require [fabulate.dslmacros :as macro])
   (:require [instaparse.core :as insta])
   (:require [re-rand.parser.rules :as rr]))
 
-(def dsl-parser (insta/parser
-    "prototypes = (<newline> <noise>?)* prototype ((<newline> <noise>?)+ prototype)* (<newline>? <noise>?)*
-     prototype = (<newline> <noise>?)* <'prototype'> <noise>? symbol (<newline>? <noise>?)* fieldblock
-     fieldblock = <'{'> fields (<newline>? <noise>?)* <'}'>
-     fields = (<newline> <noise>?)* field ((<newline> <noise>?)+ field)* <newline>?
-     field = <noise>? symbol <noise>? ( choice | function ) <noise>?
-     choice = simple-choice ( <':'> <noise>? number )?
-     function = <noise>? symbol (<noise>? choice)*
-     <simple-choice> = string | symbol | number | regex | list | range | paren-function | fieldref | fieldblock
-     string = <noise>? <quote> (!quote !escape #'.' | escaped-char)* <quote>
-     regex = <noise>? <'/'> (!'/' #'.' | <'\\\\'> '/' )* <'/'>
-     symbol = !number word
-     number = #'[-+]?[0-9][.\\w]*'
-     list = <noise>? <'<'> (<noise>? choice)+ <noise>? <'>'>
-     range = <noise>? <'['> (<noise>? &number choice)+ <noise>? <']'>
-     <paren-function> = <noise>? <'('> function <noise>? <')'>
-     fieldref = <'$'> symbol
-     <escaped-char> = escape any-char
-     <quote> = '\\\"'
-     <escape> = <'\\\\'>
-     <newline> = #'[\\n\\r]+'
-     <any-char> = #'.'
-     noise = (<comment> | <whitespace>)+
-     comment = #'#.*'
-     whitespace = #'[ \\t]+'
-     <word> = #'[\\p{Lu}\\p{Ll}\\d._-]+'
-"))
+(def dsl-grammar "prototypes = (<newline> <noise>?)* prototype ((<newline> <noise>?)+ prototype)* (<newline>? <noise>?)*
+                   prototype = (<newline> <noise>?)* <'prototype'> <noise>? symbol (<newline>? <noise>?)* fieldblock
+                   fieldblock = <'{'> fields (<newline>? <noise>?)* <'}'>
+                   fields = (<newline> <noise>?)* field ((<newline> <noise>?)+ field)* <newline>?
+                   field = <noise>? symbol <noise>? action <noise>?
+                   action = action <noise>? <'|'> <noise>? function | ( choice | function )
+                   choice = simple-choice ( <':'> <noise>? number )?
+                   function = <noise>? symbol (<noise>? choice)*
+                   <simple-choice> = string | symbol | number | regex | list | range | paren-function | fieldref | fieldblock
+                   string = <noise>? <quote> (!quote !escape #'.' | escaped-char)* <quote>
+                   regex = <noise>? <'/'> (!'/' #'.' | <'\\\\'> '/' )* <'/'>
+                   symbol = !number word
+                   number = #'[-+]?[0-9][.\\w]*'
+                   list = <noise>? <'<'> (<noise>? choice)+ <noise>? <'>'>
+                   range = <noise>? <'['> (<noise>? &number choice)+ <noise>? <']'>
+                   <paren-function> = <noise>? <'('> function <noise>? <')'>
+                   fieldref = <'$'> symbol
+                   <escaped-char> = escape any-char
+                   <quote> = '\\\"'
+                   <escape> = <'\\\\'>
+                   <newline> = #'[\\n\\r]+'
+                   <any-char> = #'.'
+                   noise = (<comment> | <whitespace>)+
+                   comment = #'#.*'
+                   whitespace = #'[ \\t]+'
+                   <word> = #'[\\p{Lu}\\p{Ll}\\d._-]+'
+              ")
+(def dsl-parser (insta/parser dsl-grammar))
 
 (defn numeric [token]
   (if (and (= -1 (.indexOf token "."))
@@ -95,6 +97,15 @@
                     {:type :range :weight pweight :items (map simplify items)}
                     (simplify-range items pweight ctx)))))
 
+(defmethod simplify :action [items pweight ctx]
+  (let [[kw inner outer] items]
+    (if (= 2 (count items))
+      (simplify inner pweight ctx)
+      (with-ctx ctx
+                {:type :action
+                 :outer (simplify outer pweight ctx)
+                 :inner (simplify inner pweight ctx)}))))
+
 (defmethod simplify :field [items pweight ctx]
   (let [[kw name choice] items
         namekw (keyword name)
@@ -122,8 +133,10 @@
 
 (defmethod simplify :function  [items pweight ctx]
   (let [[kw name & items] items
-        func (or (ns-resolve 'fabulate.dslfunctions (symbol name))
-                 (ns-resolve 'clojure.core (symbol name)))]
+        func (or (ns-resolve 'fabulate.dslmacros (symbol name))
+                 (ns-resolve 'fabulate.dslfunctions (symbol name))
+                 (ns-resolve 'clojure.core (symbol name))
+                 )]
     (with-ctx ctx {:type :function :weight pweight :name name :fn func :params (map simplify items)})))
 
 (defmethod simplify :regex [items pweight ctx]

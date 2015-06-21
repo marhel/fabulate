@@ -93,6 +93,14 @@
     ; (println "calling" (:fn field) vals)
     (apply (:fn field) vals)))
 
+(defmethod choose :action [field r]
+  (let [outer (:outer field)
+        params (:params outer)
+        inner (:inner field)]
+    ; (println "calling" (:fn outer) params inner r)
+    (apply (:fn outer) [params inner r])
+    ))
+
 (def ^:dynamic *row* {})
 
 (declare name-to-ctx)
