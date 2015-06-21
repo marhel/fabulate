@@ -1,4 +1,5 @@
 (ns fabulate.dslfunctions
+  (:require [fabulate.core :refer [choose make-rand-seq]])
   (:import (java.util Date)
            (java.text SimpleDateFormat)))
 
@@ -41,3 +42,13 @@
 (def subtract -)
 (def multiply *)
 (def divide /)
+
+(defn repeat
+  {:fabmacro true}
+  [field r]
+  (let [count-def (first (:params field))
+        inner (last (:params field))
+        count (int (choose count-def r))
+        param-rand (make-rand-seq (* Long/MAX_VALUE r))
+        result (take count (map choose (clojure.core/repeat count inner) (param-rand 1)))]
+    result))

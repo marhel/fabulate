@@ -3,7 +3,6 @@
   (:use fabulate.range)
   (:require [clojure.walk])
   (:require [fabulate.dslfunctions :as dsl])
-  (:require [fabulate.dslmacros :as macro])
   (:require [instaparse.core :as insta])
   (:require [re-rand.parser.rules :as rr]))
 
@@ -11,8 +10,8 @@
                    prototype = (<newline> <noise>?)* <'prototype'> <noise>? symbol (<newline>? <noise>?)* fieldblock
                    fieldblock = <'{'> fields (<newline>? <noise>?)* <'}'>
                    fields = (<newline> <noise>?)* field ((<newline> <noise>?)+ field)* <newline>?
-                   field = <noise>? symbol <noise>? action <noise>?
-                   action = action <noise>? <'|'> <noise>? function | ( choice | function )
+                   field = <noise>? symbol <noise>? pipeline <noise>?
+                   pipeline = pipeline <noise>? <'|'> <noise>? function | ( choice | function )
                    choice = simple-choice ( <':'> <noise>? number )?
                    function = <noise>? symbol (<noise>? choice)*
                    <simple-choice> = string | symbol | number | regex | list | range | paren-function | fieldref | fieldblock
@@ -97,14 +96,14 @@
                     {:type :range :weight pweight :items (map simplify items)}
                     (simplify-range items pweight ctx)))))
 
-(defmethod simplify :action [items pweight ctx]
+; the pipeline "inner i1 | outer o1" is rewritten as "outer o1 (inner i1)"
+(defmethod simplify :pipeline [items pweight ctx]
   (let [[kw inner outer] items]
     (if (= 2 (count items))
       (simplify inner pweight ctx)
-      (with-ctx ctx
-                {:type :action
-                 :outer (simplify outer pweight ctx)
-                 :inner (simplify inner pweight ctx)}))))
+      (let [outer (simplify outer pweight ctx)
+            inner (simplify inner pweight ctx)]
+        (with-ctx ctx (update-in outer [:params] concat [inner]))))))
 
 (defmethod simplify :field [items pweight ctx]
   (let [[kw name choice] items
@@ -133,11 +132,11 @@
 
 (defmethod simplify :function  [items pweight ctx]
   (let [[kw name & items] items
-        func (or (ns-resolve 'fabulate.dslmacros (symbol name))
-                 (ns-resolve 'fabulate.dslfunctions (symbol name))
+        func (or (ns-resolve 'fabulate.dslfunctions (symbol name))
                  (ns-resolve 'clojure.core (symbol name))
-                 )]
-    (with-ctx ctx {:type :function :weight pweight :name name :fn func :params (map simplify items)})))
+                 )
+        fabmacro? (:fabmacro (meta func))]
+    (with-ctx ctx {:type (if fabmacro? :macro :function) :weight pweight :name name :fn func :params (map simplify items)})))
 
 (defmethod simplify :regex [items pweight ctx]
   (let [[kw pattern] items]

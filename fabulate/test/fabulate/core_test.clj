@@ -250,6 +250,6 @@ dashboard {
         ; _ (prn fields)
         ]
     (binding [core/*rnd*  (core/make-rand-seq well-known-seed)]
-      (core/generate fields) => (contains {:lotto [3 6 32 37 75 83 92]}))))
+      (core/generate fields) => (contains {:lotto [26 28 32 44 46 53 73 78 87]}))))
 
 

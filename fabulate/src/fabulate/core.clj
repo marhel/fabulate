@@ -93,13 +93,9 @@
     ; (println "calling" (:fn field) vals)
     (apply (:fn field) vals)))
 
-(defmethod choose :action [field r]
-  (let [outer (:outer field)
-        params (:params outer)
-        inner (:inner field)]
-    ; (println "calling" (:fn outer) params inner r)
-    (apply (:fn outer) [params inner r])
-    ))
+(defmethod choose :macro [field r]
+  ; (println "calling" (:fn field) field r)
+  (apply (:fn field) [field r]))
 
 (def ^:dynamic *row* {})
 

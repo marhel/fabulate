@@ -2,7 +2,8 @@ prototype item {
 	id			/[A-Z]{2}\d{3}-\d{2}[a-z]/ 	# a value matching the specified regex
 	category	<Home Office Garden Construction Tools>	# a few possible choices
 	price		price [10 1000]		# a range of doubles, rounded as price
-
+	# an int range, repeated 0-5 times, sorted
+	sizes		int [0 100] | repeat [0 5] | sort
 	# a column may include the value of other columns
 	blurb		format "Item %s is a nice %s product for only €%.2f" $id $category $price
 }
