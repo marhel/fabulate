@@ -50,5 +50,7 @@
         inner (last (:params field))
         count (int (choose count-def r))
         param-rand (make-rand-seq (* Long/MAX_VALUE r))
-        result (take count (map choose (clojure.core/repeat count inner) (param-rand 1)))]
+        ; the 'doall' is needed to force evaluation of the result in the current lexical scope
+        ; using the current value of the binding for the dynamic var *row*
+        result (doall (take count (map choose (clojure.core/repeat count inner) (param-rand 1))))]
     result))

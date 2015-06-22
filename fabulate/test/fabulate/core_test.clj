@@ -108,7 +108,7 @@
 info      format \"Speed %.2f km/h Heading %.2f\" $speed $heading
 heading   [0 360]
 distance  [10 40]
-extended  format \"%s Distance %.2f\" $info $distance
+extended  format \"%s Distance %.2f\" $info $distance | repeat 2
 "
         fields (parsing/parse :fields dsl)]
     (core/fields-by-dep fields) => (just [[:speed] [:heading] [:info] [:distance] [:extended]])
@@ -251,5 +251,16 @@ dashboard {
         ]
     (binding [core/*rnd*  (core/make-rand-seq well-known-seed)]
       (core/generate fields) => (contains {:lotto [26 28 32 44 46 53 73 78 87]}))))
+
+(facts
+  "repeating field can be generated from xref"
+  (let [dsl "number   int [0 100]
+ repeatedly  $number | repeat [5 10]
+"
+        fields (parsing/parse :fields dsl)]
+    (binding [core/*rnd*  (core/make-rand-seq well-known-seed)]
+      (core/generate fields) => (contains {:number 81
+                                           :repeatedly [81 81 81 81 81 81 81 81 81]}))))
+
 
 

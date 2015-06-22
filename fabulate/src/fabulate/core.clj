@@ -173,6 +173,7 @@
 (defmethod depends-on :fieldref [field fields] #{(field-to-xref field)})
 (defmethod depends-on :list [field fields] (dependencies (flatten-tree (:wtree field)) fields))
 (defmethod depends-on :function [field fields] (dependencies (:params field) fields))
+(defmethod depends-on :macro [field fields] (dependencies (:params field) fields))
 
 (defn fields-by-dep
   ([fields selection]
