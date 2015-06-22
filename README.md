@@ -122,6 +122,77 @@ Field cross-references are symbols with a leading dollar sign, possibly with a m
 
 A reference can be done to sibling fields, from a parent prototype to a child field, or from a nested prototype to a parent field. In the above "aParent"-prototype, a reference to val needs to be qualified with the containing prototype, such as $childA.val or $childB.val, or the reference will be ambiguous, but $done and started are adequate references regardless of from where the reference is made (from childA, childB or the parent), as they uniquely identifies a single field.
 
+### Functions
+
+A field value can use functions to transform the generated data. The syntax is simply a function name followed by one or more parameters separated by spaces. Parameterless functions are not currently supported. A few examples are the use of the functions price and format below:
+
+		itemprice	price [10 1000]		# a range of doubles, rounded as price
+		text 		format "Price is %.2f" (price [10 50])	
+
+the field "itemprice", calls the "user-defined" function price, which is a ordinary function, written in clojure, doing price rounding. These functions are not defined in the DSL, and at this point needs to be defined manually in the namespace fabulate.dslfunctions.
+
+The field "text" uses two functions, the clojure.core function "format" for string formatting, and also calls the price function on a value in the range 10-50. All arguments to a function are fully evaluated before the values are being passed on to the function (compare Macro functions below).
+
+In general, functions are automatically picked up from the namespaces fabulate.dslfunctions and clojure.core.
+
+### Macro functions
+
+Macro functions are used just like ordinary functions in the DSL, but their implementation are quite different, as they hook into fabulate's data generation engine, and can introspect on their definition, including its parameters.
+
+DSL-macros are implemented as ordinary clojure functions in the dslfunctions namespace, but
+are annotated with {:fabmacro true}. They resemble clojure or lisp
+macros in several ways, but are not the same thing. The arguments for a
+ordinary DSL-function are fully evaluated before the function is called, but
+arguments for a DSL-macro function are _not_ evaluated beforehand. Instead the macro
+function receives its own definition, including the definition of all parameters (unevaluated), and are thus able to introspect on their definition.
+
+A macro function is then responsible for using its definition to generate a value,
+likely using the definition of its parameters as input. 
+
+As an example, [repeat](https://github.com/marhel/fabulate/blob/master/fabulate/src/fabulate/dslfunctions.clj) is a macro function that generates a number of values by repeatedly using the definition of its last parameter to
+generate a new value. The first parameter is used once to generate a
+value, which controls the number of repetitions.
+
+For example:
+
+    repeat [2 5] <alfa beta gamma delta>
+
+has two parameters. The first is a repeat count, and the second defines what will be repeated.In this case "repeat" will evaluate the count parameter once, yielding the number of repetitions, in this case a number in the 2-5 range, say 3. Then "repeat" will evaluate the second parameter, a multiple choice construct, 3 times yielding say "alfa", "gamma" and "gamma", and the resulting list of values will be the return value of the repeat function.
+
+Had repeat been an ordinary function, both parameters would have been evaluated once before repeat was invoked, and it would only be possible to keep repeating the same value.
+
+### Pipelines
+
+Pipelines are a way to improve readablility of complex field definitions, by reducing nesting and keeping the apparent flow of information left-to-right instead of right-to-left.
+
+A pipeline rewrites definitions of the form 
+
+```inner | outer``` to ```outer inner``` and can be nested arbitrarily, so
+```a | b | c | d``` is rewritten to ```d (c (b a))```. 
+
+The inner expression is added as the last parameter to the outer function, so adding parameters to our example:
+
+    a p1 p2 | b p3 p4 | c p5 | d p6
+
+would be rewritten as
+
+    d p6 (c p5 (b p3 p4 (a p1 p2)))
+
+Nesting pipelines in parentheses is also supported, so ```a (b | c) d``` is allowed, and will be rewritten into ```a (c b) d```.
+
+Therefore the following field definitions are all equivalent;
+
+	sort (repeat 5 (price [10 1000]))
+	sort (repeat 5 ([10 1000] | price))
+	sort (price [10 1000] | repeat 5)
+	sort ([10 1000] | price | repeat 5)
+	repeat 5 (price [10 1000]) | sort
+	repeat 5 ([10 1000] | price) | sort
+	price [10 1000] | repeat 5 | sort
+	[10 1000] | price | repeat 5 | sort
+
+and are all internally rewritten into the first form. However, ```[10 1000] | price | sort (repeat 5)``` is _not_ an equivalent definition, as this would end up calling ```repeat``` with only one parameter, and ```sort``` with two.
+
 ## Command Line Reference
 
 Basic syntax is;
