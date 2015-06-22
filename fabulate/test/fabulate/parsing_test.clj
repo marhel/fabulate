@@ -156,7 +156,7 @@ direction   <N NW W SW S SE E NE>
 direction   <N NW W SW S SE E NE>") => (contains {:speed (contains {:type :range})
                  :direction (contains {:type :list})}) 
 
-       (parsing/parse :fields"
+       (parsing/parse :fields "
 info      format \"Speed %s km/h heading %s\" $speed $heading # with comment
 
    # these are just supporting fields, used for the calculation of the info-field
@@ -232,3 +232,15 @@ prototype dashboard {
                                                                             :fields (contains {:item (contains {:type :prototype
                                                                                                                 :fields (contains {:id  (contains {:type :regex :ctx [:middle :item :id]})
                                                                                                                                    :dashboard dashboard-contents})})})})})})}))
+
+(facts "pipelining restructuring equivalence"
+       (count (distinct
+                (map #(parsing/parse :pipeline %)
+                     ["sort (repeat 5 (price [10 1000]))"
+                      "sort (repeat 5 ([10 1000] | price))"
+                      "sort (price [10 1000] | repeat 5)"
+                      "sort ([10 1000] | price | repeat 5)"
+                      "repeat 5 (price [10 1000]) | sort"
+                      "repeat 5 ([10 1000] | price) | sort"
+                      "price [10 1000] | repeat 5 | sort"
+                      "[10 1000] | price | repeat 5 | sort"]))) => 1)

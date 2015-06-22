@@ -14,14 +14,14 @@
                    pipeline = pipeline <noise>? <'|'> <noise>? function | ( choice | function )
                    choice = simple-choice ( <':'> <noise>? number )?
                    function = <noise>? symbol (<noise>? choice)*
-                   <simple-choice> = string | symbol | number | regex | list | range | paren-function | fieldref | fieldblock
+                   <simple-choice> = string | symbol | number | regex | list | range | inner-pipeline | fieldref | fieldblock
                    string = <noise>? <quote> (!quote !escape #'.' | escaped-char)* <quote>
                    regex = <noise>? <'/'> (!'/' #'.' | <'\\\\'> '/' )* <'/'>
                    symbol = !number word
                    number = #'[-+]?[0-9][.\\w]*'
                    list = <noise>? <'<'> (<noise>? choice)+ <noise>? <'>'>
                    range = <noise>? <'['> (<noise>? &number choice)+ <noise>? <']'>
-                   <paren-function> = <noise>? <'('> function <noise>? <')'>
+                   <inner-pipeline> = <noise>? <'('> pipeline <noise>? <')'>
                    fieldref = <'$'> symbol
                    <escaped-char> = escape any-char
                    <quote> = '\\\"'
@@ -102,7 +102,7 @@
     (if (= 2 (count items))
       (simplify inner pweight ctx)
       (let [outer (simplify outer pweight ctx)
-            inner (simplify inner pweight ctx)]
+            inner (dissoc (simplify inner pweight ctx) :ctx)]
         (with-ctx ctx (update-in outer [:params] concat [inner]))))))
 
 (defmethod simplify :field [items pweight ctx]
