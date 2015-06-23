@@ -114,7 +114,7 @@ Fabulate also supports nested prototypes, such as in this example prototype name
         }
     } 
 
-The nesting may continue to arbitrary depths. Note however that, currently, only a single instance of any nested prototype can be generated. Adding array support for single fields, as well as for nested prototypes is a top development priority. 
+The nesting may continue to arbitrary depths. Note however that, currently, only a single instance of any nested prototype can be generated. Adding array support for nested prototypes is a top development priority. Array support for single fields has been implemented, via the macro function ```repeat``` described later. However, the CSV writer might not currently be able to properly output arrays.
 
 ### Field cross-references
 
